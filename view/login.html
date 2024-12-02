@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/public/loginStyle.css">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6 d-flex justify-content-center align-items-center">
+                <div class="form-container">
+                    <h2>Login</h2>
+                    <form action="http://localhost:4000/login/login-user" method="POST">
+                        <div class="form-group">
+                            <label for="mobile">Mobile Number:</label>
+                            <input type="text" class="form-control" id="mobile" name="mobile" minlength="10" maxlength="10"
+                                onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57))"
+                                required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    <br>
+                    <p>Not registered? <a href="registration.html" class="btn btn-success">Sign up here</a></p>
+                </div>
+            </div>
+            <div class="col-md-6 image-container">
+                <!-- Image is now set through CSS background -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+
+        if (error === 'invalid') {
+            alert('Invalid mobile number');
+        }
+    </script>
+</body>
+
+</html>

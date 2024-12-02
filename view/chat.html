@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/public/chat.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+           
+</head>
+
+<body>
+    <nav class="navbar navbar-inverse" style="background-color: #fad895eb;opacity: 0.6;">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" style="color: #020412;" href="#" >ChatApp
+                    <!-- <img src="/socketImages/a_files/letsChat2.jfif" alt=""> -->
+                </a>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#" id="logout-btn" style="color: black;">LogOut</a></li>                  
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <!-- <img src="/socketImages/a_files/letsChat2.jfif" alt="" style="float: right;margin-top: -34px;"> -->
+        <h2>Chat Room</h2>
+        <div class="chat-container">
+            <div id="user-list" class="user-list"></div>
+            <div class="chat-box">
+                <div id="user-details" class="user-details">
+                    <marquee>
+                        <h4 id="user-info">Select A User To Chat</h4>
+                    </marquee>
+                </div>
+                <div id="chat-box" class="messages"></div>
+                <button id="plus-toggle" class="plus-btn">
+                    <span>+</span>
+                </button>
+
+                <!-- Options Menu (Initially Hidden) -->
+                <div id="options-menu" class="options-menu" style="display:none;">
+                    <button id="docs-option" class="option-btn">Documents</button>
+                    <button id="media-option" class="option-btn">Images & Videos</button>
+                    <button id="camera-option" class="option-btn">Camera</button>
+                    <button id="poll-option" class="option-btn">Poll</button>
+                    <button id="contacts-option" class="option-btn">Contacts</button>
+                </div>
+
+                 <!-- Hidden File Inputs -->
+    <input type="file" id="file-input-docs" accept="application/pdf, .doc, .docx, .txt" style="display:none;" />
+    <input type="file" id="file-input-media" accept="image/*, video/*" style="display:none;" />
+    
+    <!-- Hidden File Data -->
+    <input type="hidden" id="selected-file" />
+                <form id="chat-form" class="message-input">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="msg" placeholder="Enter your message" required autocomplete="off">
+                        <button type="button" id="emoji-btn">😊</button>
+                        <button type="submit" class="btn btn-primary" id="send-btn">Send</button>
+                    </div>
+                    <emoji-picker id="emoji-picker" hidden></emoji-picker> 
+                    <input type="hidden" id="recipient-mobile">
+                </form>
+                
+            </div>
+        </div>
+    </div>
+    <script>
+
+        const socket = io();
+    
+        const plusButton = document.getElementById('plus-toggle');
+        const optionsMenu = document.getElementById('options-menu');
+        const fileInputDocs = document.getElementById('file-input-docs');
+        const fileInputMedia = document.getElementById('file-input-media');
+        const docsOption = document.getElementById('docs-option');
+        const mediaOption = document.getElementById('media-option');
+
+        plusButton.addEventListener('click', () => {
+            const isMenuVisible = optionsMenu.style.display === 'block';
+            optionsMenu.style.display = isMenuVisible ? 'none' : 'block'; 
+        });
+ 
+        docsOption.addEventListener('click', () => {
+            fileInputDocs.click();
+            optionsMenu.style.display = 'none';
+        });
+
+        mediaOption.addEventListener('click', () => {
+            fileInputMedia.click(); 
+            optionsMenu.style.display = 'none';
+        });
+
+      
+        fileInputDocs.addEventListener('change', (event) => {
+            const file = event.target.files[0]; 
+
+            if (file) {
+                socket.emit('send-file', { file: file, type: 'document' });
+                console.log(`Selected document: ${file.name}`);
+            }
+        });
+
+        fileInputMedia.addEventListener('change', (event) => {
+            const file = event.target.files[0]; 
+            if (file) {
+                socket.emit('send-file', { file: file, type: 'media' });
+                console.log(`Selected media: ${file.name}`);
+            }
+        });
+
+        socket.on('file-uploaded', (data) => {
+            const chatBox = document.getElementById('chat-box');
+            const fileElement = document.createElement('p');
+            fileElement.classList.add('file-uploaded');
+
+            if (data.fileType === 'document') {
+                fileElement.innerHTML = `<a href="${data.filePath}" target="_blank">${data.fileName}</a>`;
+            }
+
+            if (data.fileType === 'media') {
+                const filePreview = data.fileType === 'image'
+                    ? `<img src="${data.filePath}" alt="${data.fileName}" width="100" />`
+                    : `<video width="100" controls><source src="${data.filePath}" type="video/mp4"></video>`;
+                
+                fileElement.innerHTML = `${filePreview}`;
+            }
+
+            chatBox.appendChild(fileElement); 
+        });
+
+        const queryParams = new URLSearchParams(window.location.search);
+        const userMobile = queryParams.get('mobile');
+
+        if (!userMobile) {
+            alert('Mobile number is required to log in.');
+            window.location.href = '../view/login.html';
+        } else {
+          
+            socket.emit('userLogin', userMobile);
+
+            socket.on('updateUserList', (users) => {
+                const userListDiv = document.getElementById('user-list');
+                userListDiv.innerHTML = '';
+                users.forEach(user => {
+                    if (user.mobile === userMobile) return;
+
+                    const userElement = document.createElement('div');
+                    userElement.classList.add('user-item');
+                    userElement.setAttribute('data-mobile', user.mobile);
+                    userElement.innerHTML = `
+                        <div class="user-info">
+                            <div class="username">${user.username}</div>
+                            <div class="mobile">${user.mobile}</div>
+                        </div>
+                        <span class="status-indicator ${user.status === 'Online' ? 'online' : 'offline'}">
+                            ${user.status === 'Online' ? '' : `Last online: ${user.lastOnlineTime}`}
+                        </span>
+                        ${user.unreadCount > 0 ? `<span class="unread-count">${user.unreadCount}</span>` : ''}
+                        <div class="dropdown">
+                            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                <span class="glyphicon glyphicon-option-vertical"></span>
+                                <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                <li><a href="#" class="clear-chat" data-mobile="${user.mobile}">Clear Chat</a></li>
+                            </ul>
+                        </div>
+                    `;
+                    userElement.onclick = () => {
+                        document.getElementById('recipient-mobile').value = user.mobile;
+                        socket.emit('selectChat', user.mobile);
+                        fetchChatMessages(user.mobile);
+                    };
+
+                    userListDiv.appendChild(userElement);
+                });
+            });
+
+          
+            document.addEventListener('click', (e) => {
+                if (e.target && e.target.classList.contains('clear-chat')) {
+                    e.preventDefault();
+                    const recipientMobile = e.target.getAttribute('data-mobile');
+                    if (confirm('Are you sure you want to clear the chat?')) {
+                        socket.emit('clearChat', { senderMobile: userMobile, recipientMobile });
+                        const chatBox = document.getElementById('chat-box');
+                        chatBox.innerHTML = '';
+                    }
+                }
+            });
+
+            socket.on('userStatusChange', (data) => {
+                const userItem = document.querySelector(`.user-item[data-mobile="${data.mobile}"]`);
+                if (userItem) {
+                    const statusIndicator = userItem.querySelector('.status-indicator');
+                    if (data.status === 'Online') {
+                        statusIndicator.classList.remove('offline');
+                        statusIndicator.classList.add('online');
+                        statusIndicator.textContent = '';
+                    } else {
+                        statusIndicator.classList.remove('online');
+                        statusIndicator.classList.add('offline');
+                        statusIndicator.textContent = `Last online: ${new Date().toLocaleString()}`; 
+                    }
+                }
+            });
+
+            socket.on('userDetails', (user) => {
+                const statusText = user.status === 'Online' ? 'Online' : `Offline - Last seen: ${user.lastOnlineTime}`;
+                document.getElementById('user-info').textContent = `${user.username} (${user.mobile}) - ${statusText}`;
+            });
+
+            function fetchChatMessages(recipientMobile) {
+                socket.emit('fetchMessages', { senderMobile: userMobile, recipientMobile });
+            }
+
+            socket.on('chatMessages', (messages) => {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = '';
+                messages.forEach(message => {
+                    const messageElement = document.createElement('p');
+                    const senderText = message.sender_mobile === userMobile ? 'You' : message.sender_username;
+                    messageElement.textContent = `${senderText}: ${message.message}`;
+                    chatBox.appendChild(messageElement);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+             
+                if (messages.length > 0) {
+                    socket.emit('messageRead', { senderMobile: messages[0].sender_mobile });
+                }
+            });
+
+
+            socket.on('unreadMessagesCount', (data) => {
+                const userItem = document.querySelector(`.user-item[data-mobile="${data.senderMobile}"]`);
+
+                if (userItem && data.senderMobile !== userMobile) { 
+                    let unreadCountElement = userItem.querySelector('.unread-count');
+                    if (unreadCountElement) {
+                        unreadCountElement.textContent = data.unreadCount;
+                    } else if (data.unreadCount > 0) {
+                        unreadCountElement = document.createElement('span');
+                        unreadCountElement.classList.add('unread-count');
+                        unreadCountElement.textContent = data.unreadCount;
+                        userItem.appendChild(unreadCountElement);
+                    }
+                }
+            });
+
+
+            document.getElementById('chat-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const msg = document.getElementById('msg').value.trim();
+                const recipientMobile = document.getElementById('recipient-mobile').value;
+                if (recipientMobile && msg) {
+                    const chatBox = document.getElementById('chat-box');
+                    const messageElement = document.createElement('p');
+                    messageElement.classList.add('sending');
+                    messageElement.textContent = `You: ${msg} (Sending...)`;
+                    chatBox.appendChild(messageElement);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    socket.emit('chatMessage', { senderMobile: userMobile, recipientMobile, message: msg });
+                    document.getElementById('msg').value = '';
+
+                } else {
+                    alert('Please select a user to chat with and enter a message.');
+                }
+            });
+
+            socket.on('messageSent', () => {
+                const chatBox = document.getElementById('chat-box');
+                const sendingMessageElement = chatBox.querySelector('.sending');
+                if (sendingMessageElement) {
+                    sendingMessageElement.classList.remove('sending');
+                    sendingMessageElement.textContent = sendingMessageElement.textContent.replace('Sending...', 'Sent');
+                }
+            });
+
+            socket.on('messageRead', (data) => {
+                const userItem = document.querySelector(`.user-item[data-mobile="${data.senderMobile}"]`);
+                if (userItem) {
+                    const unreadCount = userItem.querySelector('.unread-count');
+                    if (unreadCount) {
+                        unreadCount.remove();
+                    }
+                }
+            });
+
+
+            socket.on('messageReadNotification', (data) => {
+                const userItem = document.querySelector(`.user-item[data-mobile="${data.senderMobile}"]`);
+                if (userItem) {
+                    const unreadCount = userItem.querySelector('.unread-count');
+                    if (unreadCount) {
+                        unreadCount.remove();
+                    }
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', function (e) {
+                e.preventDefault();
+
+               
+                localStorage.clear();
+                sessionStorage.clear();
+
+              
+                const url = new URL(window.location.href);
+                url.searchParams.delete('mobile');
+                window.history.replaceState({}, document.title, url.pathname);
+
+          
+                fetch(`/logout?mobile=${userMobile}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.href = '/login.html';
+                        } else {
+                            console.error('Logout failed');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+
+        }
+
+        const emojiPicker = document.getElementById('emoji-picker');
+            const messageInput = document.getElementById('msg'); 
+            emojiPicker.addEventListener('emoji-click', (event) => {
+                const emoji = event.detail.unicode;
+                messageInput.value += emoji;
+            });
+
+
+        const emojiBtn = document.getElementById('emoji-btn');
+     
+        emojiBtn.addEventListener('click', () => {
+            emojiPicker.toggleAttribute('hidden');
+        });
+    
+        
+        // emojiPicker.addEventListener('emoji-select', event => {
+        //     messageInput.value += event.detail.unicode; 
+        //     messageInput.focus(); 
+        // });
+        
+
+    </script>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</body>
+
+</html>

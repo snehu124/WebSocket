@@ -1,0 +1,28 @@
+{
+  "name": "socket.io",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.6",
+    "cookies": "^0.9.1",
+    "cors": "^2.8.5",
+    "emoji-picker-element": "^1.25.0",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.0",
+    "picker": "^0.1.4",
+    "socket.io": "^4.7.5",
+    "socket.io-express-session": "^0.1.3"
+  }
+}
