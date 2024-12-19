@@ -8,23 +8,6 @@ module.exports = (io) => {
     io.on('connection', (socket) => {
         console.log('A user connected');
 
-        socket.on('send-file', (data) => {
-            const { recipientMobile, filePath, fileType } = data;
-            console.log('File path received:', filePath);
-
-            if (!filePath) {
-                console.error('Error: filePath is undefined or empty.');
-                return;
-            }
-            // Broadcast to recipient
-            io.to(recipientMobile).emit('file-uploaded', {
-                senderMobile: socket.id, // Replace with actual sender
-                filePath,
-                fileType,
-                fileName: path.basename(filePath)
-            });
-        });
-
         socket.on('userLogin', (mobile) => {
             onlineUsers[mobile] = socket.id;
             io.emit('userStatusChange', { mobile, status: 'Online' });
@@ -51,7 +34,6 @@ module.exports = (io) => {
                     unreadCount: row.unreadCount || 0
                 }));
         
-                // Now we only need to fetch unread counts for the logged-in user
                 const unreadQuery = 
                     `SELECT sender_mobile, COUNT(*) AS unreadCount
                     FROM messages
@@ -136,7 +118,19 @@ module.exports = (io) => {
                 io.to(recipientSocketId).emit('messageReadNotification', data);
             }
         });
-
+        socket.on('fetchContacts', (mobile, callback) => {
+            const sql = `SELECT username AS name, mobile AS phone FROM registration WHERE mobile != ?`;
+            
+            connection.query(sql, [mobile], (err, results) => {
+                if (err) {
+                    console.error('Error fetching contacts:', err);
+                    callback({ error: 'Unable to fetch contacts' });
+                    return;
+                }
+                callback({ success: true, contacts: results });
+            });
+        });
+        
         socket.on('selectChat', (recipientMobile) => {
             const user = {
                 mobile: recipientMobile,

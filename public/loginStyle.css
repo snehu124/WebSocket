@@ -21,10 +21,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url('../socketImages/a_files/login9.avif');
+    background-image: url('../socketImages/a_files/logout2.avif');
     background-size: cover;
     background-position: center;
-  
 }
 
 .form-container {

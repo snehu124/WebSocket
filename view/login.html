@@ -15,12 +15,12 @@
             <div class="col-md-6 d-flex justify-content-center align-items-center">
                 <div class="form-container">
                     <h2>Login</h2>
-                    <form action="http://localhost:4000/login/login-user" method="POST">
+                    <form id="loginForm" action="http://localhost:4000/login/login-user" method="POST">
                         <div class="form-group">
                             <label for="mobile">Mobile Number:</label>
                             <input type="text" class="form-control" id="mobile" name="mobile" minlength="10" maxlength="10"
                                 onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57))"
-                                required>
+                                >
                         </div>
                         <button type="submit" class="btn btn-primary">Login</button>
                     </form>
@@ -29,7 +29,6 @@
                 </div>
             </div>
             <div class="col-md-6 image-container">
-                <!-- Image is now set through CSS background -->
             </div>
         </div>
     </div>
@@ -41,6 +40,13 @@
         if (error === 'invalid') {
             alert('Invalid mobile number');
         }
+        document.getElementById('loginForm').addEventListener('submit', function (event) {
+            const mobileInput = document.getElementById('mobile').value;
+            if (mobileInput.length !== 10) {
+                event.preventDefault();
+                alert('Please enter a valid 10-digit mobile number.');
+            }
+        });
     </script>
 </body>
 
