@@ -18,14 +18,14 @@ module.exports = (io) => {
             LEFT JOIN login_times lt ON u.mobile = lt.mobile
             GROUP BY u.mobile, u.username;
         `;
-        
-        
+
+
             connection.query(sql, (err, results) => {
                 if (err) {
                     console.error('Error fetching user list:', err);
                     return;
                 }
-        
+
                 const users = results.map(row => ({
                     mobile: row.mobile,
                     username: row.username,
@@ -33,35 +33,35 @@ module.exports = (io) => {
                     status: onlineUsers[row.mobile] ? 'Online' : 'Offline',
                     unreadCount: row.unreadCount || 0
                 }));
-        
-                const unreadQuery = 
+
+                const unreadQuery =
                     `SELECT sender_mobile, COUNT(*) AS unreadCount
                     FROM messages
                     WHERE recipient_mobile = ? AND read_status = 0
                     GROUP BY sender_mobile
                 ;`
-        
+
                 connection.query(unreadQuery, [mobile], (err, unreadResults) => {
                     if (err) {
                         console.error('Error fetching unread message counts:', err);
                         return;
                     }
-        
+
                     const unreadCountMap = {};
                     unreadResults.forEach(unreadRow => {
                         unreadCountMap[unreadRow.sender_mobile] = unreadRow.unreadCount;
                     });
-        
+
                     // Update unread counts in the users array
                     users.forEach(user => {
                         user.unreadCount = unreadCountMap[user.mobile] || 0;
                     });
-        
+
                     io.to(socket.id).emit('updateUserList', users);
                 });
             });
         });
-        
+
 
         socket.on('incomingMessage', (message) => {
             const chatBox = document.getElementById('chat-box');
@@ -100,7 +100,7 @@ module.exports = (io) => {
                 </span>
                 ${user.unreadCount > 0 ? `<span class="unread-count">${user.unreadCount}</span>` : ''}
             `;
-            
+
                 userElement.onclick = () => {
                     document.getElementById('recipient-mobile').value = user.mobile;
                     socket.emit('selectChat', user.mobile);
@@ -120,7 +120,7 @@ module.exports = (io) => {
         });
         socket.on('fetchContacts', (mobile, callback) => {
             const sql = `SELECT username AS name, mobile AS phone FROM registration WHERE mobile != ?`;
-            
+
             connection.query(sql, [mobile], (err, results) => {
                 if (err) {
                     console.error('Error fetching contacts:', err);
@@ -130,7 +130,7 @@ module.exports = (io) => {
                 callback({ success: true, contacts: results });
             });
         });
-        
+
         socket.on('selectChat', (recipientMobile) => {
             const user = {
                 mobile: recipientMobile,
@@ -139,13 +139,13 @@ module.exports = (io) => {
                 lastOnlineTime: ''
             };
 
-            const sql = 
+            const sql =
                 `SELECT r.mobile, r.username, MAX(lt.login_time) AS lastOnlineTime
                 FROM registration r
                 LEFT JOIN login_times lt ON r.mobile = lt.mobile
                 WHERE r.mobile = ?
                 GROUP BY r.mobile, r.username`
-            ;
+                ;
             connection.query(sql, [recipientMobile], (err, results) => {
                 if (err) {
                     console.error('Error fetching user details:', err);
@@ -164,7 +164,7 @@ module.exports = (io) => {
 
         socket.on('fetchMessages', ({ senderMobile, recipientMobile }) => {
             const sql = `
-                SELECT m.sender_mobile, m.recipient_mobile, m.message, m.read_status, 
+                SELECT m.sender_mobile, m.recipient_mobile, m.message, m.attachment, m.read_status, 
                        r1.username AS sender_username, r2.username AS recipient_username
                 FROM messages m
                 JOIN registration r1 ON m.sender_mobile = r1.mobile
@@ -173,56 +173,64 @@ module.exports = (io) => {
                    OR (m.sender_mobile = ? AND m.recipient_mobile = ?)
                 ORDER BY m.timestamp ASC
             `;
-        
+
             connection.query(sql, [senderMobile, recipientMobile, recipientMobile, senderMobile], (err, results) => {
                 if (err) {
                     console.error('Error fetching messages:', err);
                     return;
                 }
-        
+
                 // Mark messages as read
                 const updateSql = `
                     UPDATE messages 
                     SET read_status = 1 
                     WHERE sender_mobile = ? AND recipient_mobile = ? AND read_status = 0
                 `;
-        
+
                 connection.query(updateSql, [recipientMobile, senderMobile], (err) => {
                     if (err) {
                         console.error('Error updating read status:', err);
                     }
                 });
-        
-                socket.emit('chatMessages', results);       
-               
+
+                socket.emit('chatMessages', results.map(row => ({
+                    sender_mobile: row.sender_mobile,
+                    recipient_mobile: row.recipient_mobile,
+                    message: row.message,
+                    attachment: JSON.parse(row.attachment),
+                    read_status: row.read_status,
+                    sender_username: row.sender_username,
+                    recipient_username: row.recipient_username
+                })));
+
                 if (onlineUsers[senderMobile]) {
                     io.to(onlineUsers[senderMobile]).emit('messageRead', { senderMobile: recipientMobile });
                 }
             });
         });
-        
+
         socket.on('chatMessage', (data) => {
             const recipientSocketId = onlineUsers[data.recipientMobile];
-        
-            const sql = 'INSERT INTO messages (sender_mobile, recipient_mobile, message, read_status) VALUES (?, ?, ?, 0)';
-            connection.query(sql, [data.senderMobile, data.recipientMobile, data.message], (err) => {
+
+            const sql = 'INSERT INTO messages (sender_mobile, recipient_mobile, message, attachment, read_status) VALUES (?, ?, ?, ?, 0)';
+            connection.query(sql, [data.senderMobile, data.recipientMobile, data.message, JSON.stringify(data.attachment)], (err) => {
                 if (err) {
                     console.error('Error inserting message:', err);
                 }
-        
+
                 if (recipientSocketId) {
                     io.to(recipientSocketId).emit('incomingMessage', data);
-        
-                    const unreadQuery = 
+
+                    const unreadQuery =
                         `SELECT COUNT(*) AS unreadCount FROM messages 
                         WHERE recipient_mobile = ? AND sender_mobile = ? AND read_status = 0`
-                    ;
+                        ;
                     connection.query(unreadQuery, [data.recipientMobile, data.senderMobile], (err, result) => {
                         if (err) {
                             console.error('Error fetching unread count:', err);
                             return;
                         }
-        
+
                         io.to(recipientSocketId).emit('unreadMessagesCount', {
                             senderMobile: data.senderMobile,
                             unreadCount: result[0].unreadCount
@@ -230,15 +238,15 @@ module.exports = (io) => {
                     });
                 }
             });
-        
+
             socket.emit('messageSent', data);
         });
-        
+
         socket.on('incomingMessage', (message) => {
             const chatBox = document.getElementById('chat-box');
             const messageElement = document.createElement('p');
             messageElement.classList.add('message-new');
-        
+
             // Fetch sender's username based on mobile number
             const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
             connection.query(usernameSql, [message.sender_mobile], (err, userResults) => {
@@ -246,44 +254,44 @@ module.exports = (io) => {
                     console.error('Error fetching sender username:', err);
                     return;
                 }
-        
-                const senderUsername = userResults[0]?.username || message.sender_mobile; 
+
+                const senderUsername = userResults[0]?.username || message.sender_mobile;
                 const senderText = message.sender_mobile === userMobile ? 'You' : senderUsername;
-        
+
                 messageElement.textContent = `${senderText}: ${message.message}`;
                 chatBox.appendChild(messageElement);
                 chatBox.scrollTop = chatBox.scrollHeight;
-        
+
                 if (message.sender_mobile !== userMobile && message.sender_mobile !== document.getElementById('recipient-mobile').value) {
                     socket.emit('increaseUnreadCount', { senderMobile: message.sender_mobile });
                     console.log({ senderMobile: message.sender_mobile }, "receiving mobile number");
                 }
             });
         });
-        
+
         socket.on('increaseUnreadCount', (data) => {
             const userMobile = Object.keys(onlineUsers).find(key => onlineUsers[key] === socket.id);
             if (!userMobile) {
                 console.error('User mobile not found for the current socket.');
                 return;
             }
-        
-            const sql = 
+
+            const sql =
                 `SELECT COUNT(*) AS unreadCount FROM messages 
                 WHERE sender_mobile = ? AND recipient_mobile = ? AND read_status = 0`
-            ;
+                ;
             connection.query(sql, [data.senderMobile, userMobile], (err, results) => {
                 if (err) {
                     console.error('Error fetching unread count:', err);
                     return;
                 }
-        
+
                 const recipientSocketId = onlineUsers[userMobile];
                 if (recipientSocketId) {
                     console.log(data.senderMobile, "senderMobile");
-                    console.log(senderUsername,"senderUsername");
+                    console.log(senderUsername, "senderUsername");
                     console.log(results[0].unreadCount, "unreadCount");
-                    
+
                     // Fetch username of the sender
                     const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
                     connection.query(usernameSql, [data.senderMobile], (err, userResults) => {
@@ -291,9 +299,9 @@ module.exports = (io) => {
                             console.error('Error fetching sender username:', err);
                             return;
                         }
-        
+
                         const senderUsername = userResults[0]?.username || data.senderMobile; // Fallback to mobile if username not found
-        
+
                         io.to(recipientSocketId).emit('unreadMessagesCount', {
                             senderMobile: data.senderMobile,
                             senderUsername: senderUsername,
@@ -303,8 +311,8 @@ module.exports = (io) => {
                 }
             });
         });
-        
-        
+
+
         socket.on('clearChat', ({ senderMobile, recipientMobile }) => {
             // Remove messages between sender and recipient
             const sql = 'DELETE FROM messages WHERE (sender_mobile = ? AND recipient_mobile = ?) OR (sender_mobile = ? AND recipient_mobile = ?)';
@@ -313,7 +321,7 @@ module.exports = (io) => {
                     console.error('Error clearing chat messages:', err);
                     return;
                 }
-                
+
                 // Notify both users to clear their chat views
                 io.to(onlineUsers[senderMobile]).emit('chatMessages', []);
                 io.to(onlineUsers[recipientMobile]).emit('chatMessages', []);

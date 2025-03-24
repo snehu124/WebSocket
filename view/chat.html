@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chat Room</title>
+    <title>Chat System</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="/public/chat.css">
@@ -14,37 +14,37 @@
 </head>
 
 <body>
+    <video autoplay muted loop id="background-video">
+        <source src="../socketImages/animation/girlImageAnimation1.mp4" type="video/mp4">
+    </video>
     <nav class="navbar navbar-inverse" style="background-color: #1c1f26;opacity: 0.6;">
         <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                    data-target="#navbar-collapse-1" aria-expanded="false">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" style="color: chartreuse;" href="#">ChatApp
-                    <!-- <img src="/socketImages/a_files/letsChat2.jfif" alt=""> -->
-                </a>
-            </div>
-
             <div class="collapse navbar-collapse" id="navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-left">
+                    <li>
+                        <h3>ChatApp</h3>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-center">
+                    <li>
+                        <h3 class="ChatPart">ChatRoom</h3>
+                    </li>
+                </ul>
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#" id="logout-btn" style="color: chartreuse;">LogOut</a></li>
+                    <li>
+                        <h3><a href="#" id="logout-btn" style="color: #5bf4fa; ">LogOut</a></h3>
+                    </li>
                 </ul>
             </div>
         </div>
     </nav>
     <div class="container">
-        <!-- <img src="/socketImages/a_files/letsChat2.jfif" alt="" style="float: right;margin-top: -34px;"> -->
-        <h2>Chat Room</h2>
         <div class="chat-container">
             <div id="user-list" class="user-list"></div>
             <div class="chat-box">
                 <div id="user-details" class="user-details">
                     <marquee>
-                        <h4 id="user-info">Select A User To Chat</h4>
+                        <h3 id="user-info">Select A User To Chat</h3>
                     </marquee>
                 </div>
                 <div id="chat-box" class="messages"></div>
@@ -52,9 +52,10 @@
                     <div class="input-group">
                         <input type="text" class="form-control" id="msg" placeholder="Enter your message"
                             autocomplete="off">
-                          
-                        <button type="button" id="emoji-btn">😊</button>
-                        <button type="submit" class="btn btn-primary" id="send-btn">Send</button>
+
+                        <span type="button" id="emoji-btn" style="size: 20px;">😊</span>
+                        <button type="submit" class="btn btn-default" style="color: black; background-color: #5bf4fa;"
+                            id="send-btn">Send</button>
                     </div>
                     <emoji-picker id="emoji-picker" hidden></emoji-picker>
                     <input type="hidden" id="recipient-mobile">
@@ -68,7 +69,7 @@
                     <button id="camera-option" class="option-btn"> 📸 Camera</button>
                     <button id="poll-option" class="option-btn"> 📊 Poll</button>
                     <button id="contacts-option" class="option-btn"> 📇 Contacts</button>
-                </div>           
+                </div>
                 <input type="file" id="file-input-docs" accept="application/pdf, .doc, .docx, .txt"
                     style="display:none;" />
                 <input type="file" id="file-input-media" accept="image/*, video/*" style="display:none;" />
@@ -115,7 +116,7 @@
                     attachmentData = {
                         type: 'document',
                         name: file.name,
-                        content: reader.result 
+                        content: reader.result
                     };
                     messageInput.value = `📎 Attached Document: ${file.name}`;
                 };
@@ -148,45 +149,46 @@
 
         // Camera Option (Capture and Attach Image)
         cameraOption.addEventListener('click', async () => {
-        optionsMenu.style.display = 'none';
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const videoElement = document.createElement('video');
-        const captureButton = document.createElement('button');
-        captureButton.textContent = 'Capture';
-        captureButton.style.display = 'block';
-        captureButton.style.marginTop = '10px';
+            optionsMenu.style.display = 'none';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const videoElement = document.createElement('video');
+                const captureButton = document.createElement('button');
+                captureButton.textContent = 'Capture';
+                captureButton.style.display = 'block';
+                captureButton.style.marginTop = '10px';
 
-        videoElement.srcObject = stream;
-        videoElement.autoplay = true;
-        videoElement.style.width = '100%';
-        videoElement.style.marginTop = '10px';
-        document.body.append(videoElement, captureButton);
+                videoElement.srcObject = stream;
+                videoElement.autoplay = true;
+                videoElement.style.width = '100%';
+                videoElement.style.marginTop = '10px';
+                document.body.append(videoElement, captureButton);
 
-        captureButton.addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                captureButton.addEventListener('click', () => {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-            const imageData = canvas.toDataURL('image/png');
-            attachmentData = {
-                type: 'image',
-                name: 'camera_snapshot.png',
-                content: imageData
-            };
-            messageInput.value = `📸 Camera Snapshot Attached`;
+                    const imageData = canvas.toDataURL('image/png');
+                    attachmentData = {
+                        type: 'image',
+                        name: 'camera_snapshot.png',
+                        content: imageData
+                    };
+                    messageInput.value = `📸 Camera Snapshot Attached`;
 
-            stream.getTracks().forEach(track => track.stop());
-            videoElement.remove();
-            captureButton.remove();
+                    stream.getTracks().forEach(track => track.stop());
+                    videoElement.remove();
+                    captureButton.remove();
+                });
+            } catch (err) {
+                console.error('Camera access denied:', err);
+                alert('Camera access was denied or is not supported.');
+            }
         });
-    } catch (err) {
-        console.error('Camera access denied:', err);
-        alert('Camera access was denied or is not supported.');
-    }
-});
+        
         // Poll Option
         pollOption.addEventListener('click', () => {
             optionsMenu.style.display = 'none';
@@ -206,24 +208,24 @@
             }
         });
 
-      contactsOption.addEventListener('click', () => {
-        const socket = io();
-    optionsMenu.style.display = 'none';
-    socket.emit('fetchContacts', userMobile, (response) => {
-        if (response.error) {
-            console.error('Error fetching contacts:', response.error);
-            return;
-        }
+        contactsOption.addEventListener('click', () => {
+            const socket = io();
+            optionsMenu.style.display = 'none';
+            socket.emit('fetchContacts', userMobile, (response) => {
+                if (response.error) {
+                    console.error('Error fetching contacts:', response.error);
+                    return;
+                }
 
-        attachmentData = {
-            type: 'contacts',
-            contacts: response.contacts
-        };
+                attachmentData = {
+                    type: 'contacts',
+                    contacts: response.contacts
+                };
 
-        const contactNames = response.contacts.map(contact => contact.name).join(', ');
-        messageInput.value = `📇 Contacts Attached: ${contactNames}`;
-    });
-});
+                const contactNames = response.contacts.map(contact => contact.name).join(', ');
+                messageInput.value = `📇 Contacts Attached: ${contactNames}`;
+            });
+        });
 
 
         // Send Message with Attachment
@@ -261,15 +263,19 @@
         });
 
         // Display the message with its attachment in the chat box
-        function displayMessage(msg, attachment, senderType) {
+        function displayMessage(msg, attachment, senderType, senderUsername) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', senderType);
+            const senderText = senderType === 'sender' ? 'You' : senderUsername;
+
 
             // Display text message
             const textElement = document.createElement('p');
             textElement.classList.add('message-text');
-            textElement.textContent = msg;
+            textElement.textContent = `${senderText}: ${msg}`;
             messageElement.appendChild(textElement);
+
+
 
             // Display attachment if any
             if (attachment) {
@@ -284,6 +290,13 @@
                         imageElement.style.maxWidth = '100%';
                         attachmentElement.appendChild(imageElement);
                         break;
+                    case 'video':
+                    const videoElement = document.createElement('video');
+                    videoElement.src = attachment.content;
+                    videoElement.controls = true;
+                    videoElement.style.maxWidth = '100%';
+                    attachmentElement.appendChild(videoElement);
+                    break;
                     case 'document':
                         const documentLink = document.createElement('a');
                         documentLink.href = attachment.content;
@@ -318,7 +331,7 @@
                         });
                         attachmentElement.appendChild(contactsList);
                         break;
-                        default:
+                    default:
                         break;
                 }
 
@@ -352,7 +365,7 @@
                             <div class="mobile">${user.mobile}</div>
                         </div>
                         <span class="status-indicator ${user.status === 'Online' ? 'online' : 'offline'}">
-                            ${user.status === 'Online' ? 'Online' : `Last online: ${user.lastOnlineTime}`}
+                            ${user.status === 'Online' ? '' : `Last online: ${user.lastOnlineTime}`}
                         </span>
                         ${user.unreadCount > 0 ? `<span class="unread-count">${user.unreadCount}</span>` : ''}
                         <div class="dropdown">
@@ -387,6 +400,10 @@
                     }
                 }
             });
+            socket.on('incomingMessage', (data) => {
+                displayMessage(data.message, data.attachment, 'receiver', data.sender_username);
+            });
+
 
             socket.on('userStatusChange', (data) => {
                 const userItem = document.querySelector(`.user-item[data-mobile="${data.mobile}"]`);
@@ -410,17 +427,14 @@
             });
 
             function fetchChatMessages(recipientMobile) {
-                socket.emit('fetchMessages', { senderMobile: userMobile, recipientMobile });
+                const senderMobile = userMobile;
+                socket.emit('fetchMessages', { senderMobile, recipientMobile });
             }
-
             socket.on('chatMessages', (messages) => {
                 const chatBox = document.getElementById('chat-box');
-                chatBox.innerHTML = '';
+                chatBox.innerHTML = ''; // Clear the chat box
                 messages.forEach(message => {
-                    const messageElement = document.createElement('p');
-                    const senderText = message.sender_mobile === userMobile ? 'You' : message.sender_username;
-                    messageElement.textContent = `${senderText}: ${message.message}`;
-                    chatBox.appendChild(messageElement);
+                    displayMessage(message.message, message.attachment, message.sender_mobile === userMobile ? 'sender' : 'receiver', message.sender_username);
                 });
                 chatBox.scrollTop = chatBox.scrollHeight;
 
