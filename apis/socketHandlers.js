@@ -218,27 +218,41 @@ module.exports = (io) => {
                     console.error('Error inserting message:', err);
                 }
 
-                if (recipientSocketId) {
-                    io.to(recipientSocketId).emit('incomingMessage', data);
+                // Fetch sender's username
+                const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
+                connection.query(usernameSql, [data.senderMobile], (err, userResults) => {
+                    if (err) {
+                        console.error('Error fetching sender username:', err);
+                        return;
+                    }
 
-                    const unreadQuery =
-                        `SELECT COUNT(*) AS unreadCount FROM messages 
-                        WHERE recipient_mobile = ? AND sender_mobile = ? AND read_status = 0`
-                        ;
-                    connection.query(unreadQuery, [data.recipientMobile, data.senderMobile], (err, result) => {
-                        if (err) {
-                            console.error('Error fetching unread count:', err);
-                            return;
-                        }
+                    const senderUsername = userResults[0]?.username || data.senderMobile; // Fallback to mobile if username not found
 
-                        io.to(recipientSocketId).emit('unreadMessagesCount', {
-                            senderMobile: data.senderMobile,
-                            unreadCount: result[0].unreadCount
+                    if (recipientSocketId) {
+                        io.to(recipientSocketId).emit('incomingMessage', {
+                            ...data,
+                            sender_username: senderUsername // Include sender's username
                         });
-                    });
-                }
-            });
 
+
+                        const unreadQuery =
+                            `SELECT COUNT(*) AS unreadCount FROM messages 
+                        WHERE recipient_mobile = ? AND sender_mobile = ? AND read_status = 0`
+                            ;
+                        connection.query(unreadQuery, [data.recipientMobile, data.senderMobile], (err, result) => {
+                            if (err) {
+                                console.error('Error fetching unread count:', err);
+                                return;
+                            }
+
+                            io.to(recipientSocketId).emit('unreadMessagesCount', {
+                                senderMobile: data.senderMobile,
+                                unreadCount: result[0].unreadCount
+                            });
+                        });
+                    }
+                });
+            });
             socket.emit('messageSent', data);
         });
 

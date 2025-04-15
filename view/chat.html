@@ -82,6 +82,12 @@
             </div>
         </div>
     </div>
+    <div id="attachment-modal" class="attachment-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="attachment-viewer"></div>
+        </div>
+    </div>
     <script>
         const plusButton = document.getElementById('plus-toggle');
         const optionsMenu = document.getElementById('options-menu');
@@ -146,6 +152,36 @@
                 showChatOptions(); // Show the chat options
             }
         });
+        function openAttachmentInModal(content, type) {
+            const modal = document.getElementById('attachment-modal');
+            const viewer = document.getElementById('attachment-viewer');
+            viewer.innerHTML = ''; // Clear previous content
+
+            if (type === 'image') {
+                const img = document.createElement('img');
+                img.src = content;
+                viewer.appendChild(img);
+            } else if (type === 'video') {
+                const video = document.createElement('video');
+                video.src = content;
+                video.controls = true;
+                viewer.appendChild(video);
+            }
+
+            modal.style.display = 'flex';
+
+            // Close modal on clicking the close button
+            modal.querySelector('.close-modal').onclick = () => {
+                modal.style.display = 'none';
+            };
+
+            // Close modal on clicking outside the content
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+        }
 
         // Hide options menu when clicking outside
         document.addEventListener('click', (e) => {
@@ -332,11 +368,12 @@
 
 
             // Display text message
-            const textElement = document.createElement('p');
-            textElement.classList.add('message-text');
-            textElement.textContent = `${senderText}: ${msg}`;
-            messageElement.appendChild(textElement);
-
+            if (msg) {
+                const textElement = document.createElement('p');
+                textElement.classList.add('message-text');
+                textElement.textContent = `${senderText}: ${msg}`;
+                messageElement.appendChild(textElement);
+            }
 
 
             // Display attachment if any
@@ -349,14 +386,24 @@
                         const imageElement = document.createElement('img');
                         imageElement.src = attachment.content;
                         imageElement.alt = attachment.name;
-                        imageElement.style.maxWidth = '100%';
+                        imageElement.style.maxWidth = '100px'; // Thumbnail size
+                        imageElement.style.cursor = 'pointer';
+                        imageElement.addEventListener('click', () => {
+                            openAttachmentInModal(attachment.content, 'image');
+                        });
                         attachmentElement.appendChild(imageElement);
                         break;
+
+
                     case 'video':
                         const videoElement = document.createElement('video');
                         videoElement.src = attachment.content;
                         videoElement.controls = true;
-                        videoElement.style.maxWidth = '100%';
+                        videoElement.style.maxWidth = '100px'; // Thumbnail size
+                        videoElement.style.cursor = 'pointer';
+                        videoElement.addEventListener('click', () => {
+                            openAttachmentInModal(attachment.content, 'video');
+                        });
                         attachmentElement.appendChild(videoElement);
                         break;
                     case 'document':
