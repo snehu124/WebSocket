@@ -15,21 +15,23 @@
 
 <body>
     <video autoplay muted loop id="background-video">
-        <source src="../socketImages/animation/girlImageAnimation1.mp4" type="video/mp4">
+        <source src="../socketImages/animation/girlImageAnimation1.webm" type="video/mp4">
     </video>
     <nav class="navbar navbar-inverse" style="background-color: #1c1f26;opacity: 0.6;">
         <div class="container-fluid">
             <div class="collapse navbar-collapse" id="navbar-collapse-1">
                 <ul class="nav navbar-nav navbar-left">
                     <li>
-                        <h3>ChatApp</h3>
+                        <h3>ChatRoom</h3>
                     </li>
                 </ul>
-                <ul class="nav navbar-nav navbar-center">
+                <!-- <ul class="nav navbar-nav navbar-center">
                     <li>
                         <h3 class="ChatPart">ChatRoom</h3>
+                        <img src="../socketImages/a_files/emoji2.png" alt="">
+
                     </li>
-                </ul>
+                </ul> -->
                 <ul class="nav navbar-nav navbar-right">
                     <li>
                         <h3><a href="#" id="logout-btn" style="color: #5bf4fa; ">LogOut</a></h3>
@@ -39,21 +41,24 @@
         </div>
     </nav>
     <div class="container">
+        <div id="user-details" class="user-details">
+            <marquee>
+                <h3 id="user-info">Select A User To Chat</h3>
+            </marquee>
+        </div>
         <div class="chat-container">
             <div id="user-list" class="user-list"></div>
             <div class="chat-box">
-                <div id="user-details" class="user-details">
-                    <marquee>
-                        <h3 id="user-info">Select A User To Chat</h3>
-                    </marquee>
+                <div id="search-box" class="search-box">
+                    <input type="text" id="search-input" class="form-control" placeholder="Search for users...">
                 </div>
                 <div id="chat-box" class="messages"></div>
-                <form id="chat-form" class="message-input">
+                <form id="chat-form" class="message-input" style="display: none;">
                     <div class="input-group">
                         <input type="text" class="form-control" id="msg" placeholder="Enter your message"
                             autocomplete="off">
-
-                        <span type="button" id="emoji-btn" style="size: 20px;">😊</span>
+                        <!-- <span type="button" id="emoji-btn" style="size: 20px;">😊</span> -->
+                        <img src="../socketImages/a_files/emji3.jpg" type="button" id="emoji-btn" alt="">
                         <button type="submit" class="btn btn-default" style="color: black; background-color: #5bf4fa;"
                             id="send-btn">Send</button>
                     </div>
@@ -64,11 +69,11 @@
                     <span>+</span>
                 </button>
                 <div id="options-menu" class="options-menu" style="display:none;">
-                    <button id="docs-option" class="option-btn"> 📄 Documents</button>
+                    <button id="docs-option" class="option-btn"> 📁 Documents</button>
                     <button id="media-option" class="option-btn"> 🔗 Images & Videos</button>
                     <button id="camera-option" class="option-btn"> 📸 Camera</button>
                     <button id="poll-option" class="option-btn"> 📊 Poll</button>
-                    <button id="contacts-option" class="option-btn"> 📇 Contacts</button>
+                    <button id="contacts-option" class="option-btn"> 📲 Contacts</button>
                 </div>
                 <input type="file" id="file-input-docs" accept="application/pdf, .doc, .docx, .txt"
                     style="display:none;" />
@@ -90,10 +95,67 @@
         const messageInput = document.getElementById('msg');
         const chatForm = document.getElementById('chat-form');
         const chatBox = document.getElementById('chat-box');
+        const searchBox = document.getElementById('search-box');
+        const searchInput = document.getElementById('search-input');
+        const userList = document.getElementById('user-list');
         const recipientMobileInput = document.getElementById('recipient-mobile');
         const queryParams = new URLSearchParams(window.location.search);
         const userMobile = queryParams.get('mobile');
 
+        // Function to filter users based on search input
+        function filterUsers(searchTerm) {
+            const userItems = userList.querySelectorAll('.user-item');
+            userItems.forEach(userItem => {
+                const username = userItem.querySelector('.username').textContent.toLowerCase();
+                const mobile = userItem.querySelector('.mobile').textContent.toLowerCase();
+                if (username.includes(searchTerm) || mobile.includes(searchTerm)) {
+                    userItem.style.display = 'flex'; // Show matching user
+                } else {
+                    userItem.style.display = 'none'; // Hide non-matching user
+                }
+            });
+        }
+
+        // Add event listener to search input
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filterUsers(searchTerm);
+        });
+        // Hide chat options by default
+        function hideChatOptions() {
+            chatBox.style.display = 'none';
+            chatForm.style.display = 'none';
+            plusButton.style.display = 'none';
+            optionsMenu.style.display = 'none';
+            searchBox.style.display = 'block'; // Show search box
+        }
+
+        // Show chat options when a chat is selected
+        function showChatOptions() {
+            chatBox.style.display = 'block';
+            chatForm.style.display = 'flex';
+            plusButton.style.display = 'flex';
+            searchBox.style.display = 'none'; // Hide search box
+        }
+        // Add event listener to user list items
+        userList.addEventListener('click', (e) => {
+            const userItem = e.target.closest('.user-item');
+            if (userItem) {
+                const recipientMobile = userItem.getAttribute('data-mobile');
+                recipientMobileInput.value = recipientMobile; // Set the recipient mobile
+                showChatOptions(); // Show the chat options
+            }
+        });
+
+        // Hide options menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!optionsMenu.contains(e.target) && e.target !== plusButton) {
+                optionsMenu.style.display = 'none';
+            }
+        });
+
+        // Initialize view
+        hideChatOptions();
 
         let attachmentData = null;
         // Toggle options menu
@@ -188,7 +250,7 @@
                 alert('Camera access was denied or is not supported.');
             }
         });
-        
+
         // Poll Option
         pollOption.addEventListener('click', () => {
             optionsMenu.style.display = 'none';
@@ -291,12 +353,12 @@
                         attachmentElement.appendChild(imageElement);
                         break;
                     case 'video':
-                    const videoElement = document.createElement('video');
-                    videoElement.src = attachment.content;
-                    videoElement.controls = true;
-                    videoElement.style.maxWidth = '100%';
-                    attachmentElement.appendChild(videoElement);
-                    break;
+                        const videoElement = document.createElement('video');
+                        videoElement.src = attachment.content;
+                        videoElement.controls = true;
+                        videoElement.style.maxWidth = '100%';
+                        attachmentElement.appendChild(videoElement);
+                        break;
                     case 'document':
                         const documentLink = document.createElement('a');
                         documentLink.href = attachment.content;

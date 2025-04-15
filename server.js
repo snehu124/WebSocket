@@ -9,13 +9,15 @@ const sessionMiddleware = require('../chat-app/middleware/index');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+const io = socketIO(server, {
+    maxHttpBufferSize: 1e8 // Set to 100 MB
+});
 
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(sessionMiddleware);
 
 

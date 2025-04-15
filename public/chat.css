@@ -6,11 +6,10 @@
     /* background-color: rgba(255, 255, 255, 0.8); */
 }
 
-img {
-    height: 100px;
-    margin-top: 3px;
-    padding-top: 13px;
-}
+ /* .container-fluid img{
+    height: 67px;
+    border-radius: 50%;
+} */
 
 /* .navbar-header {
     font-weight: 800;
@@ -19,7 +18,10 @@ img {
 a#logout-btn {
     font-weight: 800;
 } */
-
+img#emoji-btn {
+    height: 45px;
+    border-radius: 50%;
+}
 .user-list {
     width: 30%;
     border-right: 1px solid #ccc;
@@ -41,6 +43,15 @@ a#logout-btn {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Highlight matching users in search results */
+.user-item {
+    transition: all 0.3s ease;
+}
+
+.user-item[style*="display: flex"] {
+    background-color: #21dda3; /* Highlight matching users */
 }
 
 .user-list .user-item:hover {
@@ -136,10 +147,25 @@ body {
     opacity: 0.9;
 }
 
-h3 {
+.container-fluid h3 {
     text-align: center;
-    margin-bottom: 16px;
-    margin-top: 4px;
+    margin-bottom: 25px;
+    margin-top: 0px;
+    font-weight: 800;
+    color: #5bf4fa;
+    text-shadow: 0 0 10px #ff00ff,
+        0 0 20px #ff00ff,
+        0 0 30px #ff00ff,
+        0 0 40px #ff00ff,
+        0 0 50px #ff00ff;
+    animation: glow 1.5s ease-in-out infinite alternate;
+    padding-top: 20px;
+    font-size: 17px;    
+}
+.container h3{
+    text-align: center;
+    margin-bottom: 2px;
+    margin-top: 0px;
     font-weight: 800;
     color: #5bf4fa;
     text-shadow: 0 0 10px #ff00ff,
@@ -149,7 +175,6 @@ h3 {
         0 0 50px #ff00ff;
     animation: glow 1.5s ease-in-out infinite alternate;
 }
-
 @keyframes glow {
     from {
         text-shadow: 0 0 10px #ff00ff,
@@ -174,11 +199,11 @@ h3 {
     transform: translateX(-50%);
 }
 
-.ChatPart {
+/* .ChatPart {
     color: #5bf4fa;
     text-align: center;
     margin: 4px;
-}
+} */
 
 .container {
     margin-top: 20px;
@@ -238,7 +263,7 @@ h3 {
 
 .user-details {
     padding: 10px;
-    border-bottom: 1px solid #d82727;
+    /* border: 1px solid #ff00ff; */
     margin-bottom: 10px;
     background-color: #1c1f26;
     opacity: 0.6;
@@ -330,7 +355,6 @@ h3 {
     font-size: 24px;
 }
 
-
 #emoji-picker span {
     cursor: pointer;
     padding: 5px;
@@ -363,14 +387,15 @@ h3 {
     justify-content: center;
     align-items: center;
     position: absolute;
-    bottom: 16px;
+    bottom: 15px;
     left: 80%;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .plus-btn span {
-    font-size: 32px;
+    font-size: 36px;
     position: absolute;
+    pointer-events: none;
 }
 
 .options-menu {
@@ -383,6 +408,7 @@ h3 {
     padding: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     width: 180px;
+    display: none;
 }
 
 .option-btn {
