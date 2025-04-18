@@ -169,17 +169,17 @@ module.exports = (io) => {
                 FROM messages m
                 JOIN registration r1 ON m.sender_mobile = r1.mobile
                 JOIN registration r2 ON m.recipient_mobile = r2.mobile
-                WHERE (m.sender_mobile = ? AND m.recipient_mobile = ?)
-                   OR (m.sender_mobile = ? AND m.recipient_mobile = ?)
+                WHERE ((m.sender_mobile = ? AND m.recipient_mobile = ?) 
+                    OR (m.sender_mobile = ? AND m.recipient_mobile = ?))
+                  AND (m.deleted_for IS NULL OR m.deleted_for != ?)
                 ORDER BY m.timestamp ASC
             `;
 
-            connection.query(sql, [senderMobile, recipientMobile, recipientMobile, senderMobile], (err, results) => {
+            connection.query(sql, [senderMobile, recipientMobile, recipientMobile, senderMobile, senderMobile], (err, results) => {
                 if (err) {
                     console.error('Error fetching messages:', err);
                     return;
                 }
-
                 // Mark messages as read
                 const updateSql = `
                     UPDATE messages 
@@ -328,20 +328,61 @@ module.exports = (io) => {
 
 
         socket.on('clearChat', ({ senderMobile, recipientMobile }) => {
-            // Remove messages between sender and recipient
-            const sql = 'DELETE FROM messages WHERE (sender_mobile = ? AND recipient_mobile = ?) OR (sender_mobile = ? AND recipient_mobile = ?)';
-            connection.query(sql, [senderMobile, recipientMobile, recipientMobile, senderMobile], (err) => {
+            const checkSql = `
+                SELECT id, deleted_for 
+                FROM messages 
+                WHERE (sender_mobile = ? AND recipient_mobile = ?) 
+                   OR (sender_mobile = ? AND recipient_mobile = ?)
+            `;
+
+            connection.query(checkSql, [senderMobile, recipientMobile, recipientMobile, senderMobile], (err, results) => {
                 if (err) {
-                    console.error('Error clearing chat messages:', err);
+                    console.error('Error checking chat deletion status:', err);
                     return;
                 }
 
-                // Notify both users to clear their chat views
+                const deleteIds = [];
+                const updateIds = [];
+
+                results.forEach(row => {
+                    if (row.deleted_for === null) {
+                        // Mark as deleted for the current user
+                        updateIds.push(row.id);
+                    } else if (row.deleted_for !== senderMobile) {
+                        // If already deleted for the other user, mark for permanent deletion
+                        deleteIds.push(row.id);
+                    }
+                });
+
+                if (updateIds.length > 0) {
+                    const updateSql = `
+                        UPDATE messages 
+                        SET deleted_for = ? 
+                        WHERE id IN (?)
+                    `;
+                    connection.query(updateSql, [senderMobile, updateIds], (err) => {
+                        if (err) {
+                            console.error('Error marking chat messages as deleted:', err);
+                        }
+                    });
+                }
+
+                if (deleteIds.length > 0) {
+                    const deleteSql = `
+                        DELETE FROM messages 
+                        WHERE id IN (?)
+                    `;
+                    connection.query(deleteSql, [deleteIds], (err) => {
+                        if (err) {
+                            console.error('Error deleting chat messages:', err);
+                        }
+                    });
+                }
+
+                // Notify the sender to clear their chat view
                 io.to(onlineUsers[senderMobile]).emit('chatMessages', []);
-                io.to(onlineUsers[recipientMobile]).emit('chatMessages', []);
             });
         });
-
         // Handle logout and update logout_time
         socket.on('logout', (mobile) => {
             if (onlineUsers[mobile]) {
