@@ -72,8 +72,20 @@
                     <button id="docs-option" class="option-btn"> 📁 Documents</button>
                     <button id="media-option" class="option-btn"> 🔗 Images & Videos</button>
                     <button id="camera-option" class="option-btn"> 📸 Camera</button>
+                    <button id="video-create-option" class="option-btn"> 🎥 Create Video</button>
                     <button id="poll-option" class="option-btn"> 📊 Poll</button>
                     <button id="contacts-option" class="option-btn"> 📲 Contacts</button>
+                </div>
+                <div id="video-modal" class="attachment-modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close-modal">&times;</span>
+                        <video id="video-preview" autoplay muted></video>
+                        <button id="start-recording" class="btn btn-primary" style="display: flex;">Start
+                            Recording</button>
+                        <button id="stop-recording" class="btn btn-danger" style="display: none;">Stop
+                            Recording</button>
+                        <button id="send-video" class="btn btn-success" style="display: none;">Send Video</button>
+                    </div>
                 </div>
                 <input type="file" id="file-input-docs" accept="application/pdf, .doc, .docx, .txt"
                     style="display:none;" />
@@ -107,20 +119,139 @@
         const recipientMobileInput = document.getElementById('recipient-mobile');
         const queryParams = new URLSearchParams(window.location.search);
         const userMobile = queryParams.get('mobile');
+        const videoCreateOption = document.getElementById('video-create-option');
+        const videoModal = document.getElementById('video-modal');
+        const videoPreview = document.getElementById('video-preview');
+        const startRecordingButton = document.getElementById('start-recording');
+        const stopRecordingButton = document.getElementById('stop-recording');
+        const sendVideoButton = document.getElementById('send-video');
+        const closeModalButton = document.querySelector('.close-modal');
+
+        let mediaRecorder;
+        let recordedChunks = [];
 
         // Function to filter users based on search input
         function filterUsers(searchTerm) {
             const userItems = userList.querySelectorAll('.user-item');
             userItems.forEach(userItem => {
-                const username = userItem.querySelector('.username').textContent.toLowerCase();
+                const name = userItem.querySelector('.name').textContent.toLowerCase();
                 const mobile = userItem.querySelector('.mobile').textContent.toLowerCase();
-                if (username.includes(searchTerm) || mobile.includes(searchTerm)) {
+                if (name.includes(searchTerm) || mobile.includes(searchTerm)) {
                     userItem.style.display = 'flex'; // Show matching user
                 } else {
                     userItem.style.display = 'none'; // Hide non-matching user
                 }
             });
         }
+
+        // Open the video recording modal
+        videoCreateOption.addEventListener('click', async () => {
+            optionsMenu.style.display = 'none';
+            videoModal.style.display = 'flex';
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoPreview.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                alert('Unable to access webcam for video recording.');
+                videoModal.style.display = 'none';
+            }
+        });
+
+        // Start recording
+        startRecordingButton.addEventListener('click', () => {
+            const stream = videoPreview.srcObject;
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const videoURL = URL.createObjectURL(blob);
+
+                // Attach the video to the chat
+                attachmentData = {
+                    type: 'video',
+                    name: 'created-video.webm',
+                    content: videoURL
+                };
+
+                // Enable the send button
+                sendVideoButton.style.display = 'block';
+            };
+
+            mediaRecorder.start();
+            startRecordingButton.style.display = 'none';
+            stopRecordingButton.style.display = 'block';
+        });
+
+        // Stop recording
+        stopRecordingButton.addEventListener('click', () => {
+            mediaRecorder.stop();
+            stopRecordingButton.style.display = 'none';
+        });
+
+        // Send the video
+        sendVideoButton.addEventListener('click', () => {
+            videoModal.style.display = 'none';
+            const stream = videoPreview.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const reader = new FileReader();
+            reader.onload = () => {
+                const videoData = reader.result;
+                const recipientMobile = recipientMobileInput.value;
+
+                if (!recipientMobile) {
+                    alert('Please select a user to chat with.');
+                    return;
+                }
+
+                // console.log('Sending video data to server:', {
+                //     senderMobile: userMobile,
+                //     recipientMobile,
+                //     attachment: {
+                //         type: 'video',
+                //         name: 'created-video.webm',
+                //         content: videoData
+                //     }
+                // });
+
+                const socket = io();
+                const messagePayload = {
+                    senderMobile: userMobile,
+                    recipientMobile,
+                    attachment: {
+                        type: 'video',
+                        name: 'created-video.webm',
+                        content: videoData // Base64 encoded video
+                    }
+                };
+                socket.emit('chatMessage', messagePayload);
+
+                // Display the video in the sender's chat
+                displayMessage(null, messagePayload.attachment, 'sender');
+            };
+
+            reader.readAsDataURL(blob); // Convert the blob to Base64
+        });
+
+        // Close the modal
+        closeModalButton.addEventListener('click', () => {
+            videoModal.style.display = 'none';
+            const stream = videoPreview.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
 
         // Add event listener to search input
         searchInput.addEventListener('input', (e) => {
@@ -361,10 +492,10 @@
         });
 
         // Display the message with its attachment in the chat box
-        function displayMessage(msg, attachment, senderType, senderUsername) {
+        function displayMessage(msg, attachment, senderType, sendername) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', senderType);
-            const senderText = senderType === 'sender' ? 'You' : senderUsername;
+            const senderText = senderType === 'sender' ? 'You' : sendername;
 
 
             // Display text message
@@ -449,7 +580,7 @@
 
             // Append the message to the chat box
             chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         if (!userMobile) {
@@ -468,11 +599,12 @@
                     const userElement = document.createElement('div');
                     userElement.classList.add('user-item');
                     userElement.setAttribute('data-mobile', user.mobile);
+
                     userElement.innerHTML = `
-                        <div class="user-info">
-                            <div class="username">${user.username}</div>
-                            <div class="mobile">${user.mobile}</div>
-                        </div>
+                         <div class="user-info">
+                    <div class="name">${user.name}</div> 
+                    <div class="mobile">${user.mobile}</div>
+                </div>
                         <span class="status-indicator ${user.status === 'Online' ? 'online' : 'offline'}">
                             ${user.status === 'Online' ? '' : `Last online: ${user.lastOnlineTime}`}
                         </span>
@@ -509,7 +641,7 @@
                 }
             });
             socket.on('incomingMessage', (data) => {
-                displayMessage(data.message, data.attachment, 'receiver', data.sender_username);
+                displayMessage(data.message, data.attachment, 'receiver', data.sender_name);
             });
 
 
@@ -530,8 +662,8 @@
             });
 
             socket.on('userDetails', (user) => {
-                const statusText = user.status === 'Online' ? 'Online' : `Offline - Last seen: ${user.lastOnlineTime}`;
-                document.getElementById('user-info').textContent = `${user.username} (${user.mobile}) - ${statusText}`;
+                const statusText = user.status === 'Online' ? 'Online' : `Offline - Last Seen : ${user.lastOnlineTime}`;
+                document.getElementById('user-info').textContent = `${user.name} (${user.mobile}) - ${statusText}`;
             });
 
             function fetchChatMessages(recipientMobile) {
@@ -542,7 +674,7 @@
                 const chatBox = document.getElementById('chat-box');
                 chatBox.innerHTML = ''; // Clear the chat box
                 messages.forEach(message => {
-                    displayMessage(message.message, message.attachment, message.sender_mobile === userMobile ? 'sender' : 'receiver', message.sender_username);
+                    displayMessage(message.message, message.attachment, message.sender_mobile === userMobile ? 'sender' : 'receiver', message.sender_name);
                 });
                 chatBox.scrollTop = chatBox.scrollHeight;
 

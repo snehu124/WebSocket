@@ -12,11 +12,11 @@ module.exports = (io) => {
             onlineUsers[mobile] = socket.id;
             io.emit('userStatusChange', { mobile, status: 'Online' });
             const sql = `
-            SELECT u.mobile, u.username, MAX(lt.login_time) AS lastOnlineTime,
+            SELECT u.mobile,CONCAT(first_name, ' ', last_name ) AS name, MAX(lt.login_time) AS lastOnlineTime,
                    (SELECT COUNT(*) FROM messages WHERE recipient_mobile = u.mobile AND read_status = 0) AS unreadCount
             FROM registration u
             LEFT JOIN login_times lt ON u.mobile = lt.mobile
-            GROUP BY u.mobile, u.username;
+            GROUP BY u.mobile, u.first_name, u.last_name;
         `;
 
 
@@ -26,14 +26,14 @@ module.exports = (io) => {
                     return;
                 }
 
+
                 const users = results.map(row => ({
                     mobile: row.mobile,
-                    username: row.username,
+                    name: `${row.name}`,
                     lastOnlineTime: row.lastOnlineTime ? new Date(row.lastOnlineTime).toLocaleString() : 'Never',
                     status: onlineUsers[row.mobile] ? 'Online' : 'Offline',
                     unreadCount: row.unreadCount || 0
                 }));
-
                 const unreadQuery =
                     `SELECT sender_mobile, COUNT(*) AS unreadCount
                     FROM messages
@@ -92,7 +92,7 @@ module.exports = (io) => {
                 userElement.setAttribute('data-mobile', user.mobile);
                 userElement.innerHTML = `
                 <div class="user-info">
-                    <div class="username">${user.username}</div>
+                    <div class="name">${user.name}</div>
                     <div class="mobile">${user.mobile}</div>
                 </div>
                 <span class="status-indicator ${user.status === 'Online' ? 'online' : 'offline'}">
@@ -119,7 +119,7 @@ module.exports = (io) => {
             }
         });
         socket.on('fetchContacts', (mobile, callback) => {
-            const sql = `SELECT username AS name, mobile AS phone FROM registration WHERE mobile != ?`;
+            const sql = `SELECT CONCAT(first_name, ' ', last_name ) AS name, mobile AS phone FROM registration WHERE mobile != ?`;
 
             connection.query(sql, [mobile], (err, results) => {
                 if (err) {
@@ -134,17 +134,17 @@ module.exports = (io) => {
         socket.on('selectChat', (recipientMobile) => {
             const user = {
                 mobile: recipientMobile,
-                username: '',
+                name: '',
                 status: onlineUsers[recipientMobile] ? 'Online' : 'Offline',
                 lastOnlineTime: ''
             };
 
             const sql =
-                `SELECT r.mobile, r.username, MAX(lt.login_time) AS lastOnlineTime
+                `SELECT r.mobile, CONCAT(r.first_name, ' ', r.last_name) AS name, MAX(lt.login_time) AS lastOnlineTime
                 FROM registration r
                 LEFT JOIN login_times lt ON r.mobile = lt.mobile
                 WHERE r.mobile = ?
-                GROUP BY r.mobile, r.username`
+                GROUP BY r.mobile, r.first_name, r.last_name`
                 ;
             connection.query(sql, [recipientMobile], (err, results) => {
                 if (err) {
@@ -154,7 +154,7 @@ module.exports = (io) => {
 
                 if (results.length > 0) {
                     const row = results[0];
-                    user.username = row.username;
+                    user.name = row.name;
                     user.lastOnlineTime = row.lastOnlineTime ? new Date(row.lastOnlineTime).toLocaleString() : 'Never';
                 }
 
@@ -164,9 +164,10 @@ module.exports = (io) => {
 
         socket.on('fetchMessages', ({ senderMobile, recipientMobile }) => {
             const sql = `
-                SELECT m.sender_mobile, m.recipient_mobile, m.message, m.attachment, m.read_status, 
-                       r1.username AS sender_username, r2.username AS recipient_username
-                FROM messages m
+            SELECT m.sender_mobile, m.recipient_mobile, m.message, m.attachment, m.read_status, 
+                   CONCAT(r1.first_name, ' ', r1.last_name) AS sender_name, 
+                   CONCAT(r2.first_name, ' ', r2.last_name) AS recipient_name
+            FROM messages m
                 JOIN registration r1 ON m.sender_mobile = r1.mobile
                 JOIN registration r2 ON m.recipient_mobile = r2.mobile
                 WHERE ((m.sender_mobile = ? AND m.recipient_mobile = ?) 
@@ -199,8 +200,8 @@ module.exports = (io) => {
                     message: row.message,
                     attachment: JSON.parse(row.attachment),
                     read_status: row.read_status,
-                    sender_username: row.sender_username,
-                    recipient_username: row.recipient_username
+                    sender_name: row.sender_name,
+                    recipient_name: row.recipient_name
                 })));
 
                 if (onlineUsers[senderMobile]) {
@@ -213,27 +214,26 @@ module.exports = (io) => {
             const recipientSocketId = onlineUsers[data.recipientMobile];
 
             const sql = 'INSERT INTO messages (sender_mobile, recipient_mobile, message, attachment, read_status) VALUES (?, ?, ?, ?, 0)';
-            connection.query(sql, [data.senderMobile, data.recipientMobile, data.message, JSON.stringify(data.attachment)], (err) => {
+            connection.query(sql, [data.senderMobile, data.recipientMobile, data.message || '', JSON.stringify(data.attachment)], (err) => {
                 if (err) {
-                    console.error('Error inserting message:', err);
+                    console.error('Error inserting message into database:', err);
                 }
 
-                // Fetch sender's username
-                const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
-                connection.query(usernameSql, [data.senderMobile], (err, userResults) => {
+
+                // Fetch sender's name
+                const nameSql = `SELECT CONCAT(first_name, ' ', last_name) AS name FROM registration WHERE mobile = ?`;
+                connection.query(nameSql, [data.senderMobile], (err, userResults) => {
                     if (err) {
-                        console.error('Error fetching sender username:', err);
+                        console.error('Error fetching sender name:', err);
                         return;
                     }
 
-                    const senderUsername = userResults[0]?.username || data.senderMobile; // Fallback to mobile if username not found
-
+                    const senderName = userResults[0]?.name || data.senderMobile;
                     if (recipientSocketId) {
                         io.to(recipientSocketId).emit('incomingMessage', {
                             ...data,
-                            sender_username: senderUsername // Include sender's username
+                            sender_name: senderName // Include sender's name
                         });
-
 
                         const unreadQuery =
                             `SELECT COUNT(*) AS unreadCount FROM messages 
@@ -261,16 +261,16 @@ module.exports = (io) => {
             const messageElement = document.createElement('p');
             messageElement.classList.add('message-new');
 
-            // Fetch sender's username based on mobile number
-            const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
-            connection.query(usernameSql, [message.sender_mobile], (err, userResults) => {
+            // Fetch sender's name based on mobile number
+            const nameSql = `SELECT CONCAT(first_name, ' ', last_name ) AS name FROM registration WHERE mobile = ?`;
+            connection.query(nameSql, [message.sender_mobile], (err, userResults) => {
                 if (err) {
-                    console.error('Error fetching sender username:', err);
+                    console.error('Error fetching sender name:', err);
                     return;
                 }
 
-                const senderUsername = userResults[0]?.username || message.sender_mobile;
-                const senderText = message.sender_mobile === userMobile ? 'You' : senderUsername;
+                const sendername = userResults[0]?.name || message.sender_mobile;
+                const senderText = message.sender_mobile === userMobile ? 'You' : sendername;
 
                 messageElement.textContent = `${senderText}: ${message.message}`;
                 chatBox.appendChild(messageElement);
@@ -303,22 +303,22 @@ module.exports = (io) => {
                 const recipientSocketId = onlineUsers[userMobile];
                 if (recipientSocketId) {
                     console.log(data.senderMobile, "senderMobile");
-                    console.log(senderUsername, "senderUsername");
+                    console.log(sendername, "sendername");
                     console.log(results[0].unreadCount, "unreadCount");
 
-                    // Fetch username of the sender
-                    const usernameSql = `SELECT username FROM registration WHERE mobile = ?`;
-                    connection.query(usernameSql, [data.senderMobile], (err, userResults) => {
+                    // Fetch name of the sender
+                    const nameSql = `SELECT CONCAT(first_name, ' ', last_name ) AS name FROM registration WHERE mobile = ?`;
+                    connection.query(nameSql, [data.senderMobile], (err, userResults) => {
                         if (err) {
-                            console.error('Error fetching sender username:', err);
+                            console.error('Error fetching sender name:', err);
                             return;
                         }
 
-                        const senderUsername = userResults[0]?.username || data.senderMobile; // Fallback to mobile if username not found
+                        const sendername = userResults[0]?.name || data.senderMobile; // Fallback to mobile if name not found
 
                         io.to(recipientSocketId).emit('unreadMessagesCount', {
                             senderMobile: data.senderMobile,
-                            senderUsername: senderUsername,
+                            sendername: sendername,
                             unreadCount: results[0].unreadCount
                         });
                     });

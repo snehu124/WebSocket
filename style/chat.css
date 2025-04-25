@@ -1,6 +1,6 @@
 .chat-container {
     display: flex;
-    height: 74vh;
+    height: 73vh;
     border: 1px solid #ccc;
     width: 100%;
     /* background-color: rgba(255, 255, 255, 0.8); */
@@ -65,7 +65,7 @@ img#emoji-btn {
     flex-direction: column;
 }
 
-.user-list .user-info .username {
+.user-list .user-info .name {
     font-weight: bold;
     color: chartreuse;
 
@@ -459,9 +459,10 @@ body {
 .modal-content img,
 .modal-content video {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 65vh;
 }
 
+/* 54 */
 .close-modal {
     position: absolute;
     top: 10px;

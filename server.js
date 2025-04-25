@@ -24,6 +24,7 @@ app.use(sessionMiddleware);
 
 app.use('/style', express.static(path.join(__dirname, 'style')));
 app.use('/socketImages', express.static(path.join(__dirname, 'socketImages')));
+app.use('/bootstrap-3.3.7', express.static(path.join(__dirname, 'bootstrap-3.3.7')));
 
 
 // Serve HTML files from the 'view' folder

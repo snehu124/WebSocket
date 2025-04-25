@@ -5,91 +5,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../bootstrap-3.3.7/dist/css/bootstrap.min.css">
+    <script src="../bootstrap-3.3.7/dist/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/style/registerStyle.css">
-
-
 </head>
+
 <body>
-    <div class="container-fluid">
-        <div class="row">
-
-            <div class="col-md-6 d-flex justify-content-center align-items-center">
-                <div class="form-container">
-                    <h2>Register</h2>
-                    <form id="registerForm" action="http://localhost:4000/register/register-user" method="POST"
-                        onsubmit="return handleFormSubmit(event)">
-                        <div class="form-group">
-                            <label for="username">Username:</label>
-                            <input type="text" class="form-control" id="username" name="username">
-                        </div>
-                        <div class="form-group">
-                            <label for="mobile">Mobile Number:</label>
-                            <input type="text" class="form-control" id="mobile" name="mobile" minlength="10"
-                                maxlength="10"
-                                onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57))"
-                                >
-                        </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
-                    </form>
-
-                    <br>
-                    <p>Already registered? <a href="login.html" class="btn btn-success">Go to Login</a></p>
-                </div>
-            </div>
-            <div class="col-md-6 image-container">
-                <!-- <h1>ChatApp</h1> -->
+    <div class="background-container">
+        <div class="register-overlay">
+            <!-- <div class="container-fluid">
+        <div class="row"> -->
+            <!-- <div class="col-md-6 d-flex justify-content-center align-items-center"> -->
+            <div class="form-container">
+                <h2 style="text-align: center;">Register</h2>
+                <form id="registerForm" action="http://localhost:4000/register/register-user" method="POST"
+                    onsubmit="return handleFormSubmit(event)">
+                    <div class="form-group col-md-4">
+                        <label for="firstName">First Name:</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName"
+                            placeholder="Enter first name">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="lastName">Last Name:</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName"
+                            placeholder="Enter last name">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="email">Email:</label>
+                        <input type="text" class="form-control" id="email" name="email" placeholder="Enter email">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="Enter password">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="confirmPassword">Confirm Password:</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                            placeholder="Confirm password">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="mobile">Mobile Number:</label>
+                        <input type="text" class="form-control" id="mobile" name="mobile" minlength="10" maxlength="10"
+                            placeholder="Enter mobile number">
+                    </div>
+                    <button type="submit"
+                        class="btn btn-primary justify-content-center align-items-center">Register</button>
+                </form>
+                <br>
+                <p class="para-style" style="color: white; font-weight: bold">Already registered? <a href="login.html"
+                        class="btn btn-success">Go to Login</a></p>
             </div>
         </div>
+        <!-- <div class="col-md-6 image-container"> -->
+        <!-- </div>
+        </div>
+    </div>
+        </div> -->
     </div>
     <script>
+        function handleFormSubmit(event) {
+            event.preventDefault();
 
-  function handleFormSubmit(event) {
-    event.preventDefault();
+            const form = document.getElementById('registerForm');
+            const formData = new FormData(form);
 
-    const form = window.registerForm;
-    const formData = new FormData(form);
+            const firstName = formData.get('firstName');
+            const lastName = formData.get('lastName');
+            const email = formData.get('email');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            const mobile = formData.get('mobile');
 
-    const username = formData.get('username');
-    const mobile = formData.get('mobile');
-
-   
-    if (!username || !mobile) {
-        alert('Both Username and Mobile Number are required.');
-        return; 
-    }
-
-    const data = {
-        username: username,
-        mobile: mobile,
-    };
-
-    fetch(form.action, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data), 
-    })
-        .then(response => response.json()) 
-        .then(data => {
-            if (data.success) {
-                alert("Registered successfully!");
-                window.location.href = 'login.html';
-            } else {
-                if (data.message === "This mobile number is already registered.") {
-                    alert("This mobile number is already registered. Please use a different one.");
-                } else {
-                    alert("Registration failed: " + data.message);
-                }
+            if (!firstName || firstName.length < 3) {
+                alert('First Name is required and must be at least 3 characters long.');
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("An error occurred. Please try again.");
-        });
-}
 
+            if (!lastName || lastName.length < 3) {
+                alert('Last Name is required and must be at least 3 characters long.');
+                return;
+            }
+
+            if (!email) {
+                alert('E-mail is required.');
+                return;
+            }
+
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address.');
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                alert('Password is required and must be at least 6 characters long.');
+                return;
+            }
+
+            if (!confirmPassword) {
+                alert('Confirm Password is required.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return;
+            }
+
+            if (!mobile) {
+                alert('Mobile number is required.');
+                return;
+            }
+
+            const data = {
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password,
+                mobile: mobile,
+            };
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Registered successfully!");
+                        window.location.href = 'login.html';
+                    } else {
+                        alert("Registration failed: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred. Please try again.");
+                });
+        }
     </script>
 </body>
 
