@@ -76,6 +76,14 @@
                     <button id="poll-option" class="option-btn"> 📊 Poll</button>
                     <button id="contacts-option" class="option-btn"> 📲 Contacts</button>
                 </div>
+                <div id="camera-modal" class="attachment-modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close-modal">&times;</span>
+                        <video id="camera-preview" autoplay muted></video>
+                        <button id="capture-image" class="btn btn-primary" style="display: flex;">Capture Image</button>
+                        <button id="close-camera" class="btn btn-danger" style="display: flex;">Close</button>
+                    </div>
+                </div>
                 <div id="video-modal" class="attachment-modal" style="display: none;">
                     <div class="modal-content">
                         <span class="close-modal">&times;</span>
@@ -108,6 +116,10 @@
         const docsOption = document.getElementById('docs-option');
         const mediaOption = document.getElementById('media-option');
         const cameraOption = document.getElementById('camera-option');
+        const cameraModal = document.getElementById('camera-modal');
+        const cameraPreview = document.getElementById('camera-preview');
+        const captureImageButton = document.getElementById('capture-image');
+        const closeCameraButton = document.getElementById('close-camera');
         const pollOption = document.getElementById('poll-option');
         const contactsOption = document.getElementById('contacts-option');
         const messageInput = document.getElementById('msg');
@@ -129,6 +141,7 @@
 
         let mediaRecorder;
         let recordedChunks = [];
+        let cameraStream;
 
         // Function to filter users based on search input
         function filterUsers(searchTerm) {
@@ -232,7 +245,8 @@
                     attachment: {
                         type: 'video',
                         name: 'created-video.webm',
-                        content: videoData // Base64 encoded video
+                        content: videoData, // Base64 encoded video
+                        timestamp: new Date().toISOString()
                     }
                 };
                 socket.emit('chatMessage', messagePayload);
@@ -244,14 +258,14 @@
             reader.readAsDataURL(blob); // Convert the blob to Base64
         });
 
-        // Close the modal
-        closeModalButton.addEventListener('click', () => {
-            videoModal.style.display = 'none';
-            const stream = videoPreview.srcObject;
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        });
+        // // Close the modal
+        // closeModalButton.addEventListener('click', () => {
+        //     videoModal.style.display = 'none';
+        //     const stream = videoPreview.srcObject;
+        //     if (stream) {
+        //         stream.getTracks().forEach(track => track.stop());
+        //     }
+        // });
 
         // Add event listener to search input
         searchInput.addEventListener('input', (e) => {
@@ -376,48 +390,52 @@
             }
         });
 
-        // Camera Option (Capture and Attach Image)
+        // Open the camera modal
         cameraOption.addEventListener('click', async () => {
             optionsMenu.style.display = 'none';
+            cameraModal.style.display = 'flex';
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const videoElement = document.createElement('video');
-                const captureButton = document.createElement('button');
-                captureButton.textContent = 'Capture';
-                captureButton.style.display = 'block';
-                captureButton.style.marginTop = '10px';
-
-                videoElement.srcObject = stream;
-                videoElement.autoplay = true;
-                videoElement.style.width = '100%';
-                videoElement.style.marginTop = '10px';
-                document.body.append(videoElement, captureButton);
-
-                captureButton.addEventListener('click', () => {
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = videoElement.videoWidth;
-                    canvas.height = videoElement.videoHeight;
-                    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-                    const imageData = canvas.toDataURL('image/png');
-                    attachmentData = {
-                        type: 'image',
-                        name: 'camera_snapshot.png',
-                        content: imageData
-                    };
-                    messageInput.value = `📸 Camera Snapshot Attached`;
-
-                    stream.getTracks().forEach(track => track.stop());
-                    videoElement.remove();
-                    captureButton.remove();
-                });
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraPreview.srcObject = cameraStream;
             } catch (err) {
-                console.error('Camera access denied:', err);
-                alert('Camera access was denied or is not supported.');
+                console.error('Error accessing camera:', err);
+                alert('Unable to access the camera.');
+                cameraModal.style.display = 'none';
             }
         });
 
+        // Capture image
+        captureImageButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = cameraPreview.videoWidth;
+            canvas.height = cameraPreview.videoHeight;
+            context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/png');
+            attachmentData = {
+                type: 'image',
+                name: 'camera_snapshot.png',
+                content: imageData
+            };
+
+            messageInput.value = `📸 Camera Snapshot Attached`;
+
+            // Close the modal
+            cameraModal.style.display = 'none';
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // Close the camera modal
+        closeCameraButton.addEventListener('click', () => {
+            cameraModal.style.display = 'none';
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
         // Poll Option
         pollOption.addEventListener('click', () => {
             optionsMenu.style.display = 'none';
@@ -473,15 +491,16 @@
                 const messagePayload = {
                     senderMobile: userMobile,
                     recipientMobile,
-                    message: msg,
-                    attachment: attachmentData
+                    message: attachmentData ? '' : msg, // Send empty message if there's an attachment
+                    attachment: attachmentData || null, // Send the attachment if available
+                    timestamp: new Date().toISOString()
                 };
 
                 // Emit message to the server
                 socket.emit('chatMessage', messagePayload);
 
                 // Display the message in the sender's chat
-                displayMessage(msg, attachmentData, 'sender');
+                displayMessage(attachmentData ? null : msg, attachmentData, 'sender');
 
                 // Reset input and attachment
                 messageInput.value = '';
@@ -492,17 +511,26 @@
         });
 
         // Display the message with its attachment in the chat box
-        function displayMessage(msg, attachment, senderType, sendername) {
+        function displayMessage(msg, attachment, senderType, sendername, timestamp) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('message', senderType);
-            const senderText = senderType === 'sender' ? 'You' : sendername;
+            // const senderText = senderType === 'sender' ? 'You' : sendername;
 
+            // if (senderType === 'receiver') {
+            //     const senderNameElement = document.createElement('p');
+            //     senderNameElement.style.fontWeight = 'bold';
+            //     senderNameElement.style.marginBottom = '5px';
+            //     senderNameElement.style.color = 'red';
+            //     senderNameElement.textContent = sendername || 'Unknown';
+            //     messageElement.appendChild(senderNameElement);
+            // }
 
             // Display text message
             if (msg) {
                 const textElement = document.createElement('p');
                 textElement.classList.add('message-text');
-                textElement.textContent = `${senderText}: ${msg}`;
+                // textElement.textContent = `${senderText}: ${msg}`;
+                textElement.textContent = msg;
                 messageElement.appendChild(textElement);
             }
 
@@ -517,7 +545,7 @@
                         const imageElement = document.createElement('img');
                         imageElement.src = attachment.content;
                         imageElement.alt = attachment.name;
-                        imageElement.style.maxWidth = '100px'; // Thumbnail size
+                        imageElement.style.maxWidth = '100%'; // Thumbnail size
                         imageElement.style.cursor = 'pointer';
                         imageElement.addEventListener('click', () => {
                             openAttachmentInModal(attachment.content, 'image');
@@ -530,7 +558,7 @@
                         const videoElement = document.createElement('video');
                         videoElement.src = attachment.content;
                         videoElement.controls = true;
-                        videoElement.style.maxWidth = '100px'; // Thumbnail size
+                        videoElement.style.maxWidth = '100%'; // Thumbnail size
                         videoElement.style.cursor = 'pointer';
                         videoElement.addEventListener('click', () => {
                             openAttachmentInModal(attachment.content, 'video');
@@ -577,6 +605,23 @@
 
                 messageElement.appendChild(attachmentElement);
             }
+
+            // Add timestamp
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('timestamp');
+
+            if (timestamp) {
+                const date = new Date(timestamp);
+                if (!isNaN(date.getTime())) {
+                    timestampElement.textContent = date.toLocaleTimeString(); // Valid timestamp
+                } else {
+                    timestampElement.textContent = 'Invalid Date'; // Fallback for invalid timestamp
+                }
+            } else {
+                timestampElement.textContent = 'No Timestamp'; // Fallback for missing timestamp
+            }
+
+            messageElement.appendChild(timestampElement);
 
             // Append the message to the chat box
             chatBox.appendChild(messageElement);
@@ -641,7 +686,7 @@
                 }
             });
             socket.on('incomingMessage', (data) => {
-                displayMessage(data.message, data.attachment, 'receiver', data.sender_name);
+                displayMessage(data.message, data.attachment, 'receiver', data.sender_name, data.timestamp);
             });
 
 
@@ -674,7 +719,7 @@
                 const chatBox = document.getElementById('chat-box');
                 chatBox.innerHTML = ''; // Clear the chat box
                 messages.forEach(message => {
-                    displayMessage(message.message, message.attachment, message.sender_mobile === userMobile ? 'sender' : 'receiver', message.sender_name);
+                    displayMessage(message.message, message.attachment, message.sender_mobile === userMobile ? 'sender' : 'receiver', message.sender_name, message.timestamp);
                 });
                 chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -700,6 +745,22 @@
                 }
             });
 
+            // Select all close-modal buttons
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+
+            // Add event listeners to each close-modal button
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.attachment-modal'); // Find the closest modal
+                    modal.style.display = 'none';
+
+                    // Stop the video or camera stream if applicable
+                    const videoPreview = modal.querySelector('video');
+                    if (videoPreview && videoPreview.srcObject) {
+                        videoPreview.srcObject.getTracks().forEach(track => track.stop());
+                    }
+                });
+            });
 
             document.getElementById('chat-form').addEventListener('submit', (e) => {
                 e.preventDefault();

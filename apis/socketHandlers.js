@@ -164,7 +164,7 @@ module.exports = (io) => {
 
         socket.on('fetchMessages', ({ senderMobile, recipientMobile }) => {
             const sql = `
-            SELECT m.sender_mobile, m.recipient_mobile, m.message, m.attachment, m.read_status, 
+            SELECT m.sender_mobile, m.recipient_mobile, m.message, m.attachment, m.read_status, m.timestamp,
                    CONCAT(r1.first_name, ' ', r1.last_name) AS sender_name, 
                    CONCAT(r2.first_name, ' ', r2.last_name) AS recipient_name
             FROM messages m
@@ -201,7 +201,8 @@ module.exports = (io) => {
                     attachment: JSON.parse(row.attachment),
                     read_status: row.read_status,
                     sender_name: row.sender_name,
-                    recipient_name: row.recipient_name
+                    recipient_name: row.recipient_name,
+                    timestamp: row.timestamp
                 })));
 
                 if (onlineUsers[senderMobile]) {
@@ -213,7 +214,7 @@ module.exports = (io) => {
         socket.on('chatMessage', (data) => {
             const recipientSocketId = onlineUsers[data.recipientMobile];
 
-            const sql = 'INSERT INTO messages (sender_mobile, recipient_mobile, message, attachment, read_status) VALUES (?, ?, ?, ?, 0)';
+            const sql = 'INSERT INTO messages (sender_mobile, recipient_mobile, message, attachment, read_status, timestamp) VALUES (?, ?, ?, ?, 0, NOW())';
             connection.query(sql, [data.senderMobile, data.recipientMobile, data.message || '', JSON.stringify(data.attachment)], (err) => {
                 if (err) {
                     console.error('Error inserting message into database:', err);
@@ -232,7 +233,8 @@ module.exports = (io) => {
                     if (recipientSocketId) {
                         io.to(recipientSocketId).emit('incomingMessage', {
                             ...data,
-                            sender_name: senderName // Include sender's name
+                            sender_name: senderName, // Include sender's name
+                            timestamp: new Date().toISOString()
                         });
 
                         const unreadQuery =
