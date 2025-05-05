@@ -488,19 +488,20 @@
 
             if (msg || attachmentData) {
                 const socket = io();
+                const timestamp = new Date().toISOString();
                 const messagePayload = {
                     senderMobile: userMobile,
                     recipientMobile,
                     message: attachmentData ? '' : msg, // Send empty message if there's an attachment
                     attachment: attachmentData || null, // Send the attachment if available
-                    timestamp: new Date().toISOString()
+                    timestamp,
                 };
 
                 // Emit message to the server
                 socket.emit('chatMessage', messagePayload);
 
                 // Display the message in the sender's chat
-                displayMessage(attachmentData ? null : msg, attachmentData, 'sender');
+                displayMessage(attachmentData ? null : msg, attachmentData, 'sender', null, timestamp);
 
                 // Reset input and attachment
                 messageInput.value = '';

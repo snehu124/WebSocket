@@ -46,14 +46,12 @@ img#emoji-btn {
     align-items: center;
 }
 
-/* Highlight matching users in search results */
 .user-item {
     transition: all 0.3s ease;
 }
 
 .user-item[style*="display: flex"] {
     background-color: #21dda3;
-    /* Highlight matching users */
 }
 
 .user-list .user-item:hover {
@@ -249,7 +247,7 @@ body {
 .status-indicator {
     margin-left: 10px;
     display: inline-block;
-    font-size: 12px;
+    /* font-size: 12px; */
 }
 
 .online {
@@ -535,14 +533,14 @@ body {
     margin-left: auto;
     background-color: #c0ee9b;
     color: #000;
-    text-align: right;
+    text-align: justify;
 }
 
 .message.receiver {
     margin-right: auto;
     background-color: #efb9b9;
     color: #000;
-    text-align: left;
+    text-align: justify;
 }
 
 /* Message text */
