@@ -6,18 +6,6 @@
     /* background-color: rgba(255, 255, 255, 0.8); */
 }
 
-/* .container-fluid img{
-    height: 67px;
-    border-radius: 50%;
-} */
-
-/* .navbar-header {
-    font-weight: 800;
-}
-
-a#logout-btn {
-    font-weight: 800;
-} */
 img#emoji-btn {
     height: 45px;
     border-radius: 50%;
@@ -202,12 +190,6 @@ body {
     transform: translateX(-50%);
 }
 
-/* .ChatPart {
-    color: #5bf4fa;
-    text-align: center;
-    margin: 4px;
-} */
-
 .container {
     margin-top: 20px;
     /* width: 100%; */
@@ -224,6 +206,7 @@ body {
 
 .messages p:nth-child(odd) {
     background-color: #cfc9c933;
+    /* background-color: white; */
 }
 
 .message-input input {
@@ -436,7 +419,6 @@ body {
     background-color: #128c7e;
 }
 
-/* Modal styles */
 .attachment-modal {
     position: fixed;
     top: 0;
@@ -508,9 +490,71 @@ body {
     margin-bottom: 10px;
 }
 
+.poll {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
 .poll p {
-    color: red;
-    text-align: justify;
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 15px;
+    text-align: center;
+    text-shadow: 0 0 10px #ff00ff,
+        0 0 20px #ff00ff,
+        0 0 30px #ff00ff,
+        0 0 40px #ff00ff,
+        0 0 50px #ff00ff;
+    animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+.poll-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease;
+}
+
+.poll-option:hover {
+    background-color: #e6f7ff;
+}
+
+.poll-option span {
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
+}
+
+.poll-option .btn-primary {
+    font-size: 14px;
+    padding: 5px 15px;
+    background-color: #5bc0de;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.poll-option .btn-primary:hover {
+    background-color: #31b0d5;
+}
+
+.poll-option span {
+    margin-right: 10px;
+    font-size: 14px;
+    color: #333;
 }
 
 #capture-image,
@@ -518,7 +562,6 @@ body {
     margin: 10px;
 }
 
-/* Message container styles */
 .message {
     display: flex;
     margin: 10px 0;
@@ -543,22 +586,19 @@ body {
     text-align: justify;
 }
 
-/* Message text */
 .message-text {
     margin: 0;
     font-size: 14px;
 }
 
-/* Attachments */
 .attachment img,
 .attachment video {
-    max-width: 100%;
+    max-width: 92% !important;
     max-height: 100px;
     border-radius: 5px;
     cursor: pointer;
 }
 
-/* Timestamp */
 .message .timestamp {
     font-size: 10px;
     color: #0f0d0d;

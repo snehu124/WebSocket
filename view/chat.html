@@ -576,19 +576,51 @@
                     case 'poll':
                         const pollElement = document.createElement('div');
                         pollElement.classList.add('poll');
+
                         const questionElement = document.createElement('p');
                         questionElement.textContent = attachment.question;
                         pollElement.appendChild(questionElement);
 
+                        // Ensure votes array is valid
+                        const totalVotes = Array.isArray(attachment.votes)
+                            ? attachment.votes.reduce((sum, count) => sum + count, 0)
+                            : 0;
+
                         attachment.options.forEach((option, index) => {
-                            const optionElement = document.createElement('button');
-                            optionElement.textContent = option;
+                            const optionElement = document.createElement('div');
                             optionElement.classList.add('poll-option');
-                            optionElement.addEventListener('click', () => {
-                                alert(`You voted: ${option}`);
+
+                            const percentage = totalVotes > 0
+                                ? ((attachment.votes[index] / totalVotes) * 100).toFixed(1)
+                                : 0;
+
+                            const optionText = document.createElement('span');
+                            optionText.textContent = `${option} (${percentage}%)`;
+                            optionElement.appendChild(optionText);
+
+                            const voteButton = document.createElement('button');
+                            voteButton.textContent = (attachment.voters && attachment.voters[userMobile] === index) ? 'Change Vote' : 'Vote';
+                            voteButton.classList.add('btn', 'btn-primary');
+                            voteButton.addEventListener('click', () => {
+                                const recipientMobile = recipientMobileInput.value;
+                                if (!recipientMobile) {
+                                    alert('Recipient mobile is missing.');
+                                    return;
+                                }
+
+                                const socket = io();
+                                socket.emit('pollVote', {
+                                    question: attachment.question,
+                                    selectedOption: index,
+                                    senderMobile: userMobile,
+                                    recipientMobile: recipientMobile
+                                });
                             });
+                            optionElement.appendChild(voteButton);
+
                             pollElement.appendChild(optionElement);
                         });
+
                         attachmentElement.appendChild(pollElement);
                         break;
                     case 'contacts':
@@ -610,18 +642,7 @@
             // Add timestamp
             const timestampElement = document.createElement('span');
             timestampElement.classList.add('timestamp');
-
-            if (timestamp) {
-                const date = new Date(timestamp);
-                if (!isNaN(date.getTime())) {
-                    timestampElement.textContent = date.toLocaleTimeString(); // Valid timestamp
-                } else {
-                    timestampElement.textContent = 'Invalid Date'; // Fallback for invalid timestamp
-                }
-            } else {
-                timestampElement.textContent = 'No Timestamp'; // Fallback for missing timestamp
-            }
-
+            timestampElement.textContent = new Date(timestamp).toLocaleTimeString();
             messageElement.appendChild(timestampElement);
 
             // Append the message to the chat box
@@ -706,7 +727,77 @@
                     }
                 }
             });
+            function displayPoll(pollElement, pollData) {
+                // Clear the existing content of the poll element
+                pollElement.innerHTML = '';
 
+                // Display the poll question
+                const questionElement = document.createElement('p');
+                questionElement.textContent = pollData.question || 'No question provided';
+                pollElement.appendChild(questionElement);
+
+                // Calculate total votes
+                const totalVotes = Array.isArray(pollData.votes)
+                    ? pollData.votes.reduce((sum, count) => sum + count, 0)
+                    : 0;
+
+                // Display each poll option with its percentage and vote button
+                pollData.options.forEach((option, index) => {
+                    const optionElement = document.createElement('div');
+                    optionElement.classList.add('poll-option');
+
+                    // Calculate the percentage of votes for this option
+                    const percentage = totalVotes > 0
+                        ? ((pollData.votes[index] / totalVotes) * 100).toFixed(1)
+                        : 0;
+
+                    // Display the option text and percentage
+                    const optionText = document.createElement('span');
+                    optionText.textContent = `${option} (${percentage}%)`;
+                    optionElement.appendChild(optionText);
+
+                    // Add a vote button
+                    const voteButton = document.createElement('button');
+                    voteButton.textContent = pollData.voters && pollData.voters[userMobile] === index ? 'Change Vote' : 'Vote';
+                    voteButton.classList.add('btn', 'btn-primary');
+                    voteButton.addEventListener('click', () => {
+                        const recipientMobile = recipientMobileInput.value;
+                        if (!recipientMobile) {
+                            alert('Recipient mobile is missing.');
+                            return;
+                        }
+
+                        const socket = io();
+                        socket.emit('pollVote', {
+                            question: pollData.question,
+                            selectedOption: index,
+                            senderMobile: userMobile,
+                            recipientMobile: recipientMobile
+                        });
+                    });
+                    optionElement.appendChild(voteButton);
+
+                    pollElement.appendChild(optionElement);
+                });
+            }
+            socket.on('pollUpdated', (data) => {
+                const { senderMobile, recipientMobile, pollData } = data;
+
+                // Check if the poll belongs to the current chat
+                if (recipientMobile === userMobile || senderMobile === userMobile) {
+                    const chatBox = document.getElementById('chat-box');
+                    const pollElements = chatBox.querySelectorAll('.poll');
+
+                    pollElements.forEach((pollElement) => {
+                        const questionElement = pollElement.querySelector('p');
+                        if (questionElement && questionElement.textContent === pollData.question) {
+                            // Update the poll options and votes
+                            pollElement.innerHTML = ''; // Clear the existing poll
+                            displayPoll(pollElement, pollData); // Re-render the poll
+                        }
+                    });
+                }
+            });
             socket.on('userDetails', (user) => {
                 const statusText = user.status === 'Online' ? 'Online' : `Offline - Last Seen : ${user.lastOnlineTime}`;
                 document.getElementById('user-info').textContent = `${user.name} (${user.mobile}) - ${statusText}`;

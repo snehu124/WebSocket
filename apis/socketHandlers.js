@@ -211,6 +211,83 @@ module.exports = (io) => {
             });
         });
 
+        socket.on('pollVote', ({ question, selectedOption, senderMobile, recipientMobile }) => {
+            if (!recipientMobile) {
+                console.error('Recipient mobile is missing.');
+                return;
+            }
+
+            const sqlCheckPoll = `
+                SELECT id, attachment
+                FROM messages
+                WHERE ((sender_mobile = ? AND recipient_mobile = ?) OR (sender_mobile = ? AND recipient_mobile = ?))
+                AND JSON_EXTRACT(attachment, '$.type') = 'poll'
+                ORDER BY timestamp DESC
+                LIMIT 1
+            `;
+
+            connection.query(sqlCheckPoll, [senderMobile, recipientMobile, recipientMobile, senderMobile], (err, results) => {
+                if (err || results.length === 0) {
+                    console.error('Poll not found:', err);
+                    return;
+                }
+
+                const pollId = results[0].id;
+                const attachment = JSON.parse(results[0].attachment);
+                if (!attachment.voters) {
+                    attachment.voters = {};
+                }
+                // Ensure the votes array is initialized
+                if (!Array.isArray(attachment.votes)) {
+                    attachment.votes = Array(attachment.options.length).fill(0);
+                }
+
+                // Validate the selectedOption index
+                if (selectedOption < 0 || selectedOption >= attachment.votes.length) {
+                    console.error('Invalid selectedOption index:', selectedOption);
+                    return;
+                }
+
+                // Check if the user has already voted
+                if (attachment.voters && attachment.voters[senderMobile] !== undefined) {
+                    const previousOption = attachment.voters[senderMobile];
+                    attachment.votes[previousOption]--; // Decrement the previous vote
+                }
+
+                // Update the user's vote
+                attachment.voters = attachment.voters || {};
+                attachment.voters[senderMobile] = selectedOption;
+                attachment.votes[selectedOption]++; // Increment the new vote
+
+                // Update the poll data in the database
+                const updatedAttachment = JSON.stringify(attachment);
+                const sqlUpdatePoll = `
+                    UPDATE messages
+                    SET attachment = ?
+                    WHERE id = ?
+                `;
+
+                connection.query(sqlUpdatePoll, [updatedAttachment, pollId], (err) => {
+                    if (err) {
+                        console.error('Error updating poll data:', err);
+                        return;
+                    }
+
+                    // Notify both sender and receiver about the updated poll
+                    const senderSocketId = onlineUsers[senderMobile];
+                    const recipientSocketId = onlineUsers[recipientMobile];
+
+                    if (senderSocketId) {
+                        io.to(senderSocketId).emit('pollUpdated', { senderMobile, recipientMobile, pollData: attachment });
+                    }
+
+                    if (recipientSocketId) {
+                        io.to(recipientSocketId).emit('pollUpdated', { senderMobile, recipientMobile, pollData: attachment });
+                    }
+                });
+            });
+        });
+
         socket.on('chatMessage', (data) => {
             const recipientSocketId = onlineUsers[data.recipientMobile];
 
