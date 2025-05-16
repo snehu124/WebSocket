@@ -4,7 +4,7 @@ const sessionMiddleware = session({
     secret: 'KeySecreate',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } 
+    cookie: { secure: false }
 });
 
 module.exports = sessionMiddleware;

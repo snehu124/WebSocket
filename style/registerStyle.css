@@ -1,39 +1,31 @@
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     height: 100%;
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* Form container */
 .form-container {
-    position: absolute; 
-    z-index: 2; 
-    background-color: rgba(255, 255, 255, 0.1); /* Transparent form background */
+    position: absolute;
+    z-index: 2;
+    background-color: rgba(255, 255, 255, 0.1);
     padding: 8px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 631px;
     text-align: center;
-    top: 50%; /* Adjust this value to align with the finger */
-    left: 50%; /* Centers the form horizontally */
-    transform: translate(-50%, -50%); /* Ensures proper centering */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     bottom: -24%;
 }
 
-/* Left side styling */
-/* .col-md-6 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-} */
-
 .background-container {
     background-image: url('/socketImages/a_files/register_image.jpg');
-    background-size: cover; 
+    background-size: cover;
     background-repeat: no-repeat;
-    /* background-position: center center;  */
     height: 100vh;
     display: flex;
     align-items: center;
@@ -52,16 +44,6 @@ html, body {
     z-index: 1;
 }
 
-/* .form-box {
-    width: 100%;
-} */
-
-/* .image-container h1 {
-    font-size: 3rem;
-    color: #333;
-} */
-
-/* Form styling */
 h2 {
     margin-bottom: 41px;
     color: #fff;
@@ -72,7 +54,7 @@ h2 {
     margin-bottom: 15px;
     border-radius: 5px;
     background-color: rgba(255, 255, 255, 0.2);
-    color: #fff; 
+    color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
@@ -82,18 +64,11 @@ h2 {
 
 .form-group label {
     font-weight: bold;
-    color: #fff; 
+    color: #fff;
 }
 
-/* .btn-block {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 6px;
-} */
-
 .btn-primary {
-    background-color: rgba(0, 123, 255, 0.8); 
+    background-color: rgba(0, 123, 255, 0.8);
     border-color: rgba(0, 123, 255, 0.8);
     color: #fff;
     margin-top: 10px;
@@ -101,10 +76,9 @@ h2 {
 }
 
 .btn-primary:hover {
-    background-color: rgba(0, 123, 255, 1); 
+    background-color: rgba(0, 123, 255, 1);
 }
 
-/* Style for password toggle icon */
 .password-wrapper .input-group {
     position: relative;
 }
@@ -125,7 +99,6 @@ h2 {
     border-right: none;
 }
 
-/* Style for buttons with icons */
 .btn .glyphicon {
     margin-right: 8px;
 }

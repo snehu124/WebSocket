@@ -68,11 +68,9 @@ router.post('/generate-otp', (req, res) => {
             return res.status(404).json({ error: 'User not found.' });
         }
 
-        // Generate a 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-        // Store OTP in the database
         const insertOtpSql = 'INSERT INTO otps (identifier, otp, expires_at) VALUES (?, ?, ?)';
         connection.query(insertOtpSql, [identifier, otp, expiresAt], (err) => {
             if (err) {
@@ -80,7 +78,6 @@ router.post('/generate-otp', (req, res) => {
                 return res.status(500).json({ error: 'Database error' });
             }
 
-            // In a real application, send OTP via email or SMS
             console.log(`OTP for ${identifier}: ${otp}`);
 
             res.json({ message: 'OTP generated and sent.' });
@@ -91,7 +88,6 @@ router.post('/generate-otp', (req, res) => {
 router.post('/reset-password', async (req, res) => {
     const { identifier, otp, newPassword } = req.body;
 
-    // Verify OTP
     const verifyOtpSql = 'SELECT * FROM otps WHERE identifier = ? AND otp = ? AND expires_at > NOW()';
     connection.query(verifyOtpSql, [identifier, otp], async (err, results) => {
         if (err) {
@@ -103,10 +99,8 @@ router.post('/reset-password', async (req, res) => {
             return res.status(400).json({ error: 'Invalid or expired OTP.' });
         }
 
-        // Hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update the password
         const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
         const updatePasswordSql = isEmail
             ? 'UPDATE registration SET password = ? WHERE email = ?'
@@ -118,7 +112,6 @@ router.post('/reset-password', async (req, res) => {
                 return res.status(500).json({ error: 'Database error' });
             }
 
-            // Delete the used OTP
             const deleteOtpSql = 'DELETE FROM otps WHERE identifier = ?';
             connection.query(deleteOtpSql, [identifier], (err) => {
                 if (err) {
@@ -133,7 +126,6 @@ router.post('/reset-password', async (req, res) => {
 router.post('/change-password', async (req, res) => {
     const { mobile, oldPassword, newPassword } = req.body;
 
-    // Verify user and old password
     const query = 'SELECT * FROM registration WHERE mobile = ?';
     connection.query(query, [mobile], async (err, results) => {
         if (err) {
@@ -151,10 +143,8 @@ router.post('/change-password', async (req, res) => {
             return res.status(400).json({ error: 'Incorrect old password.' });
         }
 
-        // Hash the new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update the password
         const updatePasswordSql = 'UPDATE registration SET password = ? WHERE mobile = ?';
         connection.query(updatePasswordSql, [hashedPassword, mobile], (err) => {
             if (err) {

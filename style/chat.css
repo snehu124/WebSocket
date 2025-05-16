@@ -3,7 +3,6 @@
     height: 72vh;
     border: 1px solid #ccc;
     width: 100%;
-    /* background-color: rgba(255, 255, 255, 0.8); */
 }
 
 img#emoji-btn {
@@ -111,20 +110,6 @@ body {
     position: relative;
 }
 
-/* body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('../socketImages/animation/NewGirl.mp4');
-    background-size: cover;
-    background-position: center;
-    opacity: 0.9;
-    z-index: -1;
-} */
-
 #background-video {
     position: fixed;
     top: 0;
@@ -192,7 +177,6 @@ body {
 
 .container {
     margin-top: 20px;
-    /* width: 100%; */
 }
 
 .messages p {
@@ -206,7 +190,6 @@ body {
 
 .messages p:nth-child(odd) {
     background-color: #cfc9c933;
-    /* background-color: white; */
 }
 
 .message-input input {
@@ -230,7 +213,6 @@ body {
 .status-indicator {
     margin-left: 10px;
     display: inline-block;
-    /* font-size: 12px; */
 }
 
 .online {
@@ -249,7 +231,6 @@ body {
 
 .user-details {
     padding: 10px;
-    /* border: 1px solid #ff00ff; */
     margin-bottom: 10px;
     background-color: #1c1f26;
     opacity: 0.6;
@@ -448,7 +429,6 @@ body {
     max-height: 65vh;
 }
 
-/* 54 */
 .close-modal {
     position: absolute;
     top: 10px;
@@ -607,7 +587,7 @@ body {
     right: 10px;
 }
 
-.dropdown-toggle h3{
+.dropdown-toggle h3 {
     position: relative;
     bottom: 17px;
 }

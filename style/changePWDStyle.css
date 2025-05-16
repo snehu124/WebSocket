@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     height: 100%;
@@ -86,7 +87,6 @@ h2 {
     background-color: rgba(0, 123, 255, 1);
 }
 
-/* Style for password toggle icon */
 .password-wrapper .input-group {
     position: relative;
 }
@@ -107,7 +107,6 @@ h2 {
     border-right: none;
 }
 
-/* Style for buttons with icons */
 .btn .glyphicon {
     margin-right: 8px;
 }
