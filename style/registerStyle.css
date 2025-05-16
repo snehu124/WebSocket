@@ -1,34 +1,35 @@
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', sans-serif;
 }
 
-  /* Form container */
+/* Form container */
 .form-container {
-  position: absolute; 
-  z-index: 2; 
-  background-color: rgba(255, 255, 255, 0.1); /* Transparent form background */
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 631px;
-  text-align: center;
-  top: 50%; /* Adjust this value to align with the finger */
-  left: 50%; /* Centers the form horizontally */
-  transform: translate(-50%, -50%); /* Ensures proper centering */
+    position: absolute; 
+    z-index: 2; 
+    background-color: rgba(255, 255, 255, 0.1); /* Transparent form background */
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 631px;
+    text-align: center;
+    top: 50%; /* Adjust this value to align with the finger */
+    left: 50%; /* Centers the form horizontally */
+    transform: translate(-50%, -50%); /* Ensures proper centering */
+    bottom: -24%;
 }
-  
-  /* Left side styling */
-  /* .col-md-6 {
+
+/* Left side styling */
+/* .col-md-6 {
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-   */
-   .background-container {
+} */
+
+.background-container {
     background-image: url('/socketImages/a_files/register_image.jpg');
     background-size: cover; 
     background-repeat: no-repeat;
@@ -38,9 +39,9 @@ html, body {
     align-items: center;
     justify-content: center;
     position: relative;
-  }
+}
 
-  .background-container::before {
+.background-container::before {
     content: '';
     position: absolute;
     top: 0;
@@ -49,58 +50,86 @@ html, body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
     z-index: 1;
-  }
-  
+}
 
-  /* .form-box {
+/* .form-box {
     width: 100%;
-  } */
+} */
 
-  /* .image-container h1 {
+/* .image-container h1 {
     font-size: 3rem;
     color: #333;
-  } */
-  
-  /* Form styling */
-  h2 {
+} */
+
+/* Form styling */
+h2 {
     margin-bottom: 41px;
     color: #fff;
     font-size: 2.8rem;
-  }
-  
-  .form-control {
+}
+
+.form-control {
     margin-bottom: 15px;
     border-radius: 5px;
     background-color: rgba(255, 255, 255, 0.2);
     color: #fff; 
     border: 1px solid rgba(255, 255, 255, 0.5);
-  }
+}
 
-  .form-control::placeholder {
+.form-control::placeholder {
     color: rgba(255, 255, 255, 0.7);
-  }
-  
-  .form-group label {
+}
+
+.form-group label {
     font-weight: bold;
     color: #fff; 
-  }
-
-  /* .btn-block {
-    width: 100%; */
-    /* padding: 10px;
-    font-size: 16px;
-    border-radius: 6px; */
-  /* } */
-  
-.btn-primary {
-  background-color: rgba(0, 123, 255, 0.8); 
-  border-color: rgba(0, 123, 255, 0.8);
-  color: #fff;
-  margin-top: 10px;
-  width: 100%;
 }
-  
+
+/* .btn-block {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 6px;
+} */
+
+.btn-primary {
+    background-color: rgba(0, 123, 255, 0.8); 
+    border-color: rgba(0, 123, 255, 0.8);
+    color: #fff;
+    margin-top: 10px;
+    width: 97%;
+}
 
 .btn-primary:hover {
-  background-color: rgba(0, 123, 255, 1); 
+    background-color: rgba(0, 123, 255, 1); 
+}
+
+/* Style for password toggle icon */
+.password-wrapper .input-group {
+    position: relative;
+}
+
+.password-wrapper .input-group-addon {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-left: none;
+    color: #fff;
+    cursor: pointer;
+}
+
+.password-wrapper .input-group-addon .glyphicon {
+    font-size: 14px;
+}
+
+.password-wrapper .form-control {
+    border-right: none;
+}
+
+/* Style for buttons with icons */
+.btn .glyphicon {
+    margin-right: 8px;
+}
+
+.btn-success .glyphicon {
+    margin-right: 5px;
 }

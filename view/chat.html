@@ -33,8 +33,14 @@
                     </li>
                 </ul> -->
                 <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <h3><a href="#" id="logout-btn" style="color: #5bf4fa; ">LogOut</a></h3>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" style="color: #5bf4fa;">
+                            <h3 style="margin: 0;">More Option<span class="caret"></span></h3>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <li><a href="#" id="change-password-btn"><span class="glyphicon glyphicon-lock"></span> Change Password</a></li>
+                            <li><a href="#" id="logout-btn"><span class="glyphicon glyphicon-log-out"></span> Log Out</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -903,7 +909,10 @@
                     }
                 }
             });
-
+            document.getElementById('change-password-btn').addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.href = `change-password.html?mobile=${encodeURIComponent(userMobile)}`;
+            });
             document.getElementById('logout-btn').addEventListener('click', function (e) {
                 e.preventDefault();
 

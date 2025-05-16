@@ -54,20 +54,20 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-image: url('../socketImages/a_files/girl_login2-Photoroom_object_only.png');
+    background-image: url('../socketImages/a_files/forgot_preview_rev_1.png');
     background-size: cover;
-    background-position: center;
+    background-position: 0%;
     background-repeat: no-repeat;
 }
 
 .form-container {
     background-color: rgba(255, 255, 255, 0.1);
     z-index: 2;
-    padding: 79px;
-    border-radius: 10px;
+    padding: 54px;
+    border-radius: 10px !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     width: 100%;
-    border-radius: 8px;
+    border-radius: 8px !important;
     max-width: 601px;
     margin: auto;
 }
@@ -121,7 +121,6 @@ h2 {
     margin-right: 8px;
 }
 
-.btn-success .glyphicon,
-.btn-warning .glyphicon {
+.btn-info .glyphicon {
     margin-right: 5px;
 }

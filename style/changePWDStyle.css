@@ -3,7 +3,7 @@ html, body {
     padding: 0;
     height: 100%;
     font-family: 'Segoe UI', sans-serif;
-    background-color: #56524f;
+    background-color: #c5ced5;
     position: fixed;
     width: 100%;
 }
@@ -19,21 +19,28 @@ html, body {
     justify-content: center;
 }
 
+.img-container {
+    margin-left: -15%;
+    vertical-align: middle;
+    height: 500px;
+    margin-top: 10%;
+}
+
 .form-control {
     margin-bottom: 15px;
     border-radius: 5px;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background-color: #c5ced5;
+    color: black;
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: black;
 }
 
 .form-group label {
     font-weight: bold;
-    color: #fff;
+    color: black;
 }
 
 .form-box {
@@ -44,30 +51,14 @@ html, body {
     width: 100%;
 }
 
-.image-container h1 {
-    font-size: 3rem;
-    color: #333;
-}
-
-.image-container {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-image: url('../socketImages/a_files/girl_login2-Photoroom_object_only.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
 .form-container {
     background-color: rgba(255, 255, 255, 0.1);
     z-index: 2;
-    padding: 79px;
-    border-radius: 10px;
+    padding: 54px;
+    border-radius: 10px !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     width: 100%;
-    border-radius: 8px;
+    border-radius: 8px !important;
     max-width: 601px;
     margin: auto;
 }
@@ -75,7 +66,7 @@ html, body {
 h2 {
     text-align: center;
     margin-bottom: 41px;
-    color: #fff;
+    color: black;
     font-size: 2.8rem;
 }
 
@@ -104,7 +95,7 @@ h2 {
     background-color: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.5);
     border-left: none;
-    color: #fff;
+    color: black;
     cursor: pointer;
 }
 
@@ -121,7 +112,6 @@ h2 {
     margin-right: 8px;
 }
 
-.btn-success .glyphicon,
-.btn-warning .glyphicon {
+.btn-info .glyphicon {
     margin-right: 5px;
 }

@@ -7,7 +7,7 @@ router.post('/register-user', async (req, res) => {
   const { firstName, lastName, email, password, mobile } = req.body;
 
   try {
-    connection.query('SELECT * FROM registration WHERE mobile = ?', [mobile], async (err, results) => {
+    connection.query('SELECT * FROM registration WHERE mobile = ? OR email = ?', [mobile, email], async (err, results) => {
       if (err) {
         console.error('Database query error:', err);
         return res.status(500).json({
@@ -17,9 +17,10 @@ router.post('/register-user', async (req, res) => {
       }
 
       if (results.length > 0) {
+        const duplicateField = results[0].email === email ? 'email' : 'mobile';
         return res.status(400).json({
           success: false,
-          message: 'This mobile number is already registered.',
+          message: `This ${duplicateField} is already registered.`,
         });
       }
 

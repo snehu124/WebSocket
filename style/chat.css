@@ -1,6 +1,6 @@
 .chat-container {
     display: flex;
-    height: 73vh;
+    height: 72vh;
     border: 1px solid #ccc;
     width: 100%;
     /* background-color: rgba(255, 255, 255, 0.8); */
@@ -605,4 +605,13 @@ body {
     position: absolute;
     bottom: 3px;
     right: 10px;
+}
+
+.dropdown-toggle h3{
+    position: relative;
+    bottom: 17px;
+}
+
+.dropdown-menu-right {
+    position: relative;
 }
